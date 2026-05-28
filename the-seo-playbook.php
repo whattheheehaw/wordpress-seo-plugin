@@ -1,13 +1,13 @@
 <?php
 /**
- * Plugin Name:       Ultimate WP SEO
- * Plugin URI:        https://ameliahollis.net/ultimate-wp-seo
+ * Plugin Name:       The SEO Playbook
+ * Plugin URI:        https://ameliahollis.net/the-seo-playbook
  * Description:       A powerful, modular SEO suite for WordPress. Includes Post SEO + Social Cards, a Person/Author entity with an auto-built profile page, FAQ schema, canonical URLs, and enhanced llms.txt for AI search visibility.
  * Version:           2.2.0
  * Requires at least: 6.4
  * Requires PHP:      8.0
  * Author:            Amelia Hollis
- * Text Domain:       ultimate-wp-seo
+ * Text Domain:       the-seo-playbook
  * License:           GPL-2.0-or-later
  */
 
@@ -15,9 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'UWPS_VERSION', '2.2.0' );
+define( 'TSEP_VERSION', '2.2.0' );
 
-class Ultimate_WP_SEO {
+class The_SEO_Playbook {
 
     private static $instance = null;
 
@@ -61,7 +61,7 @@ class Ultimate_WP_SEO {
     }
 
     public function add_settings_link( $links ) {
-        $settings_link = '<a href="' . admin_url( 'options-general.php?page=ultimate-wp-seo' ) . '">' . __( 'Settings', 'ultimate-wp-seo' ) . '</a>';
+        $settings_link = '<a href="' . admin_url( 'options-general.php?page=the-seo-playbook' ) . '">' . __( 'Settings', 'the-seo-playbook' ) . '</a>';
         array_unshift( $links, $settings_link );
         return $links;
     }
@@ -71,10 +71,10 @@ class Ultimate_WP_SEO {
      * ========================================================================== */
     public function add_settings_page() {
         add_options_page(
-            __( 'Ultimate WP SEO', 'ultimate-wp-seo' ),
-            __( 'Ultimate WP SEO', 'ultimate-wp-seo' ),
+            __( 'The SEO Playbook', 'the-seo-playbook' ),
+            __( 'The SEO Playbook', 'the-seo-playbook' ),
             'manage_options',
-            'ultimate-wp-seo',
+            'the-seo-playbook',
             [ $this, 'render_settings_page' ]
         );
     }
@@ -86,17 +86,17 @@ class Ultimate_WP_SEO {
         <div class="wrap">
             <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
             <h2 class="nav-tab-wrapper">
-                <a href="?page=ultimate-wp-seo&tab=schema" class="nav-tab <?php echo $active_tab == 'schema' ? 'nav-tab-active' : ''; ?>">Schema &amp; Entity</a>
-                <a href="?page=ultimate-wp-seo&tab=sitemaps" class="nav-tab <?php echo $active_tab == 'sitemaps' ? 'nav-tab-active' : ''; ?>">Sitemaps</a>
-                <a href="?page=ultimate-wp-seo&tab=onpage" class="nav-tab <?php echo $active_tab == 'onpage' ? 'nav-tab-active' : ''; ?>">On-Page</a>
-                <a href="?page=ultimate-wp-seo&tab=post-seo" class="nav-tab <?php echo $active_tab == 'post-seo' ? 'nav-tab-active' : ''; ?>">Post SEO &amp; Social Cards</a>
-                <a href="?page=ultimate-wp-seo&tab=advanced" class="nav-tab <?php echo $active_tab == 'advanced' ? 'nav-tab-active' : ''; ?>">Advanced tools</a>
+                <a href="?page=the-seo-playbook&tab=schema" class="nav-tab <?php echo $active_tab == 'schema' ? 'nav-tab-active' : ''; ?>">Schema &amp; Entity</a>
+                <a href="?page=the-seo-playbook&tab=sitemaps" class="nav-tab <?php echo $active_tab == 'sitemaps' ? 'nav-tab-active' : ''; ?>">Sitemaps</a>
+                <a href="?page=the-seo-playbook&tab=onpage" class="nav-tab <?php echo $active_tab == 'onpage' ? 'nav-tab-active' : ''; ?>">On-Page</a>
+                <a href="?page=the-seo-playbook&tab=post-seo" class="nav-tab <?php echo $active_tab == 'post-seo' ? 'nav-tab-active' : ''; ?>">Post SEO &amp; Social Cards</a>
+                <a href="?page=the-seo-playbook&tab=advanced" class="nav-tab <?php echo $active_tab == 'advanced' ? 'nav-tab-active' : ''; ?>">Advanced tools</a>
             </h2>
 
             <form method="post" action="options.php">
                 <?php
-                settings_fields( 'uwps_options_' . $active_tab );
-                do_action( 'uwps_render_tab_' . $active_tab );
+                settings_fields( 'tsep_options_' . $active_tab );
+                do_action( 'tsep_render_tab_' . $active_tab );
                 submit_button();
                 ?>
             </form>
@@ -120,42 +120,42 @@ class Ultimate_WP_SEO {
     private function init_person_schema() {
         add_action( 'admin_init', [ $this, 'person_register_settings' ] );
         add_action( 'admin_init', [ $this, 'person_maybe_create_page' ] );
-        add_action( 'uwps_render_tab_schema', [ $this, 'person_render_settings' ] );
+        add_action( 'tsep_render_tab_schema', [ $this, 'person_render_settings' ] );
         add_action( 'wp_head', [ $this, 'person_output_schema' ], 6 );
-        add_shortcode( 'uwps_person', [ $this, 'person_shortcode' ] );
+        add_shortcode( 'tsep_person', [ $this, 'person_shortcode' ] );
     }
 
     public function person_register_settings() {
-        register_setting( 'uwps_options_schema', 'uwps_person_enabled', 'absint' );
-        register_setting( 'uwps_options_schema', 'uwps_person_name', 'sanitize_text_field' );
-        register_setting( 'uwps_options_schema', 'uwps_person_job_title', 'sanitize_text_field' );
-        register_setting( 'uwps_options_schema', 'uwps_person_bio', 'sanitize_textarea_field' );
-        register_setting( 'uwps_options_schema', 'uwps_person_image', 'esc_url_raw' );
-        register_setting( 'uwps_options_schema', 'uwps_person_same_as', [ $this, 'sanitize_url_list' ] );
+        register_setting( 'tsep_options_schema', 'tsep_person_enabled', 'absint' );
+        register_setting( 'tsep_options_schema', 'tsep_person_name', 'sanitize_text_field' );
+        register_setting( 'tsep_options_schema', 'tsep_person_job_title', 'sanitize_text_field' );
+        register_setting( 'tsep_options_schema', 'tsep_person_bio', 'sanitize_textarea_field' );
+        register_setting( 'tsep_options_schema', 'tsep_person_image', 'esc_url_raw' );
+        register_setting( 'tsep_options_schema', 'tsep_person_same_as', [ $this, 'sanitize_url_list' ] );
     }
 
     public function person_render_settings() {
-        $enabled  = get_option( 'uwps_person_enabled', 1 );
-        $name     = get_option( 'uwps_person_name', '' );
-        $job      = get_option( 'uwps_person_job_title', '' );
-        $bio      = get_option( 'uwps_person_bio', '' );
-        $image    = get_option( 'uwps_person_image', '' );
-        $same_as  = (array) get_option( 'uwps_person_same_as', [] );
-        $page_id  = (int) get_option( 'uwps_person_page_id', 0 );
+        $enabled  = get_option( 'tsep_person_enabled', 1 );
+        $name     = get_option( 'tsep_person_name', '' );
+        $job      = get_option( 'tsep_person_job_title', '' );
+        $bio      = get_option( 'tsep_person_bio', '' );
+        $image    = get_option( 'tsep_person_image', '' );
+        $same_as  = (array) get_option( 'tsep_person_same_as', [] );
+        $page_id  = (int) get_option( 'tsep_person_page_id', 0 );
         ?>
         <hr>
         <h2>Person / Author Entity</h2>
         <p>Builds a <code>Person</code> knowledge-graph entity so AI search engines (ChatGPT, Perplexity, Google SGE) can identify who you are. The plugin auto-creates an editable <strong>profile page</strong> that serves as your canonical entity URL.</p>
         <table class="form-table">
-            <tr><th>Enable Person Entity</th><td><input type="checkbox" name="uwps_person_enabled" value="1" <?php checked( 1, $enabled ); ?>></td></tr>
-            <tr><th>Name</th><td><input type="text" name="uwps_person_name" value="<?php echo esc_attr( $name ); ?>" class="regular-text" placeholder="e.g. Amelia Hollis"></td></tr>
-            <tr><th>Job Title</th><td><input type="text" name="uwps_person_job_title" value="<?php echo esc_attr( $job ); ?>" class="regular-text" placeholder="e.g. Founder &amp; SEO Consultant"></td></tr>
-            <tr><th>Bio / Description</th><td><textarea name="uwps_person_bio" rows="4" class="large-text"><?php echo esc_textarea( $bio ); ?></textarea></td></tr>
-            <tr><th>Profile Image URL</th><td><input type="url" name="uwps_person_image" value="<?php echo esc_attr( $image ); ?>" class="widefat" placeholder="https://..."></td></tr>
+            <tr><th>Enable Person Entity</th><td><input type="checkbox" name="tsep_person_enabled" value="1" <?php checked( 1, $enabled ); ?>></td></tr>
+            <tr><th>Name</th><td><input type="text" name="tsep_person_name" value="<?php echo esc_attr( $name ); ?>" class="regular-text" placeholder="e.g. Amelia Hollis"></td></tr>
+            <tr><th>Job Title</th><td><input type="text" name="tsep_person_job_title" value="<?php echo esc_attr( $job ); ?>" class="regular-text" placeholder="e.g. Founder &amp; SEO Consultant"></td></tr>
+            <tr><th>Bio / Description</th><td><textarea name="tsep_person_bio" rows="4" class="large-text"><?php echo esc_textarea( $bio ); ?></textarea></td></tr>
+            <tr><th>Profile Image URL</th><td><input type="url" name="tsep_person_image" value="<?php echo esc_attr( $image ); ?>" class="widefat" placeholder="https://..."></td></tr>
             <tr>
                 <th>Profile &amp; Social Links (sameAs)</th>
                 <td>
-                    <textarea name="uwps_person_same_as" rows="6" class="large-text code" placeholder="https://www.linkedin.com/in/you&#10;https://x.com/you&#10;https://github.com/you"><?php echo esc_textarea( implode( "\n", $same_as ) ); ?></textarea>
+                    <textarea name="tsep_person_same_as" rows="6" class="large-text code" placeholder="https://www.linkedin.com/in/you&#10;https://x.com/you&#10;https://github.com/you"><?php echo esc_textarea( implode( "\n", $same_as ) ); ?></textarea>
                     <p class="description">One URL per line. The single most important signal for AI entity resolution &mdash; link every profile that represents you (LinkedIn, X, GitHub, Wikipedia, Crunchbase, etc.).</p>
                 </td>
             </tr>
@@ -165,7 +165,7 @@ class Ultimate_WP_SEO {
                 <a href="<?php echo esc_url( get_permalink( $page_id ) ); ?>" target="_blank"><?php echo esc_html( get_permalink( $page_id ) ); ?></a>
                 &nbsp;(<a href="<?php echo esc_url( get_edit_post_link( $page_id ) ); ?>">edit</a>)
             </p>
-            <p class="description">The page renders your bio via the <code>[uwps_person]</code> shortcode (always live from the fields above) and outputs the <code>Person</code> JSON-LD. Edits you make in the block editor are never overwritten.</p>
+            <p class="description">The page renders your bio via the <code>[tsep_person]</code> shortcode (always live from the fields above) and outputs the <code>Person</code> JSON-LD. Edits you make in the block editor are never overwritten.</p>
         <?php endif; ?>
         <hr>
         <?php
@@ -177,52 +177,52 @@ class Ultimate_WP_SEO {
      * (so manual block-editor edits are safe). Runs on activation and defensively on admin_init.
      */
     public function person_maybe_create_page() {
-        if ( ! get_option( 'uwps_person_enabled', 1 ) ) return;
+        if ( ! get_option( 'tsep_person_enabled', 1 ) ) return;
 
         // Already created once (even if since trashed/deleted) — leave it alone.
-        if ( false !== get_option( 'uwps_person_page_id', false ) ) return;
+        if ( false !== get_option( 'tsep_person_page_id', false ) ) return;
 
-        $name  = get_option( 'uwps_person_name', '' );
+        $name  = get_option( 'tsep_person_name', '' );
         $title = $name ? 'About ' . $name : 'About Me';
 
         $new_id = wp_insert_post( [
             'post_title'   => $title,
             'post_name'    => 'about-me',
-            'post_content' => '[uwps_person]',
+            'post_content' => '[tsep_person]',
             'post_status'  => 'publish',
             'post_type'    => 'page',
         ] );
 
         if ( $new_id && ! is_wp_error( $new_id ) ) {
-            update_option( 'uwps_person_page_id', $new_id );
+            update_option( 'tsep_person_page_id', $new_id );
         }
     }
 
     public function person_shortcode() {
-        if ( ! get_option( 'uwps_person_enabled', 1 ) ) return '';
-        $name = get_option( 'uwps_person_name', '' );
+        if ( ! get_option( 'tsep_person_enabled', 1 ) ) return '';
+        $name = get_option( 'tsep_person_name', '' );
         if ( ! $name ) return '';
 
-        $job   = get_option( 'uwps_person_job_title', '' );
-        $bio   = get_option( 'uwps_person_bio', '' );
-        $image = get_option( 'uwps_person_image', '' );
-        $links = (array) get_option( 'uwps_person_same_as', [] );
+        $job   = get_option( 'tsep_person_job_title', '' );
+        $bio   = get_option( 'tsep_person_bio', '' );
+        $image = get_option( 'tsep_person_image', '' );
+        $links = (array) get_option( 'tsep_person_same_as', [] );
 
         ob_start();
         ?>
-        <div class="uwps-person" itemscope itemtype="https://schema.org/Person">
+        <div class="tsep-person" itemscope itemtype="https://schema.org/Person">
             <?php if ( $image ) : ?>
-                <img class="uwps-person__image" src="<?php echo esc_url( $image ); ?>" alt="<?php echo esc_attr( $name ); ?>" itemprop="image" style="max-width:180px;height:auto;border-radius:50%;">
+                <img class="tsep-person__image" src="<?php echo esc_url( $image ); ?>" alt="<?php echo esc_attr( $name ); ?>" itemprop="image" style="max-width:180px;height:auto;border-radius:50%;">
             <?php endif; ?>
-            <h2 class="uwps-person__name" itemprop="name"><?php echo esc_html( $name ); ?></h2>
+            <h2 class="tsep-person__name" itemprop="name"><?php echo esc_html( $name ); ?></h2>
             <?php if ( $job ) : ?>
-                <p class="uwps-person__title" itemprop="jobTitle"><?php echo esc_html( $job ); ?></p>
+                <p class="tsep-person__title" itemprop="jobTitle"><?php echo esc_html( $job ); ?></p>
             <?php endif; ?>
             <?php if ( $bio ) : ?>
-                <div class="uwps-person__bio" itemprop="description"><?php echo wpautop( esc_html( $bio ) ); ?></div>
+                <div class="tsep-person__bio" itemprop="description"><?php echo wpautop( esc_html( $bio ) ); ?></div>
             <?php endif; ?>
             <?php if ( $links ) : ?>
-                <ul class="uwps-person__links">
+                <ul class="tsep-person__links">
                     <?php foreach ( $links as $url ) : ?>
                         <li><a href="<?php echo esc_url( $url ); ?>" rel="me noopener" itemprop="sameAs"><?php echo esc_html( $this->person_link_label( $url ) ); ?></a></li>
                     <?php endforeach; ?>
@@ -234,11 +234,11 @@ class Ultimate_WP_SEO {
     }
 
     public function person_output_schema() {
-        if ( ! get_option( 'uwps_person_enabled', 1 ) ) return;
-        $name = get_option( 'uwps_person_name', '' );
+        if ( ! get_option( 'tsep_person_enabled', 1 ) ) return;
+        $name = get_option( 'tsep_person_name', '' );
         if ( ! $name ) return;
 
-        $page_id = (int) get_option( 'uwps_person_page_id', 0 );
+        $page_id = (int) get_option( 'tsep_person_page_id', 0 );
 
         // Output the full node only on the front page and the profile page to avoid sitewide bloat.
         $on_profile = $page_id && is_page( $page_id );
@@ -255,20 +255,20 @@ class Ultimate_WP_SEO {
             'mainEntityOfPage' => $person_url,
         ];
 
-        if ( $job = get_option( 'uwps_person_job_title', '' ) ) {
+        if ( $job = get_option( 'tsep_person_job_title', '' ) ) {
             $person['jobTitle'] = $job;
         }
-        if ( $bio = get_option( 'uwps_person_bio', '' ) ) {
+        if ( $bio = get_option( 'tsep_person_bio', '' ) ) {
             $person['description'] = $bio;
         }
-        if ( $image = get_option( 'uwps_person_image', '' ) ) {
+        if ( $image = get_option( 'tsep_person_image', '' ) ) {
             $person['image'] = $image;
         }
-        $same_as = array_values( (array) get_option( 'uwps_person_same_as', [] ) );
+        $same_as = array_values( (array) get_option( 'tsep_person_same_as', [] ) );
         if ( $same_as ) {
             $person['sameAs'] = $same_as;
         }
-        if ( get_option( 'uwps_schema_enabled', 1 ) ) {
+        if ( get_option( 'tsep_schema_enabled', 1 ) ) {
             $person['worksFor'] = [ '@id' => home_url( '/#organization' ) ];
         }
 
@@ -319,25 +319,25 @@ class Ultimate_WP_SEO {
      * ========================================================================== */
     private function init_post_seo() {
         add_action( 'admin_init', [ $this, 'post_seo_register_settings' ] );
-        add_action( 'uwps_render_tab_post-seo', [ $this, 'post_seo_render_settings' ] );
+        add_action( 'tsep_render_tab_post-seo', [ $this, 'post_seo_render_settings' ] );
         add_action( 'add_meta_boxes', [ $this, 'post_seo_add_meta_box' ] );
         add_action( 'save_post', [ $this, 'post_seo_save_meta' ] );
         add_filter( 'pre_get_document_title', [ $this, 'post_seo_filter_document_title' ] );
     }
 
     public function post_seo_register_settings() {
-        register_setting( 'uwps_options_post-seo', 'uwps_post_seo_enabled', 'absint' );
+        register_setting( 'tsep_options_post-seo', 'tsep_post_seo_enabled', 'absint' );
     }
 
     public function post_seo_render_settings() {
-        $enabled = get_option( 'uwps_post_seo_enabled', 1 );
+        $enabled = get_option( 'tsep_post_seo_enabled', 1 );
         ?>
         <h2>Post SEO & Social Media Cards</h2>
         <table class="form-table">
             <tr>
                 <th>Enable Post SEO Meta Box</th>
                 <td>
-                    <label><input type="checkbox" name="uwps_post_seo_enabled" value="1" <?php checked( 1, $enabled ); ?>> Show the SEO + Social Cards meta box in the editor</label>
+                    <label><input type="checkbox" name="tsep_post_seo_enabled" value="1" <?php checked( 1, $enabled ); ?>> Show the SEO + Social Cards meta box in the editor</label>
                 </td>
             </tr>
         </table>
@@ -346,12 +346,12 @@ class Ultimate_WP_SEO {
     }
 
     public function post_seo_add_meta_box() {
-        if ( ! get_option( 'uwps_post_seo_enabled', 1 ) ) return;
+        if ( ! get_option( 'tsep_post_seo_enabled', 1 ) ) return;
         $post_types = get_post_types( [ 'public' => true ] );
         foreach ( $post_types as $type ) {
             add_meta_box(
-                'uwps_post_seo_box',
-                'Ultimate WP SEO – Title, Description & Social Cards',
+                'tsep_post_seo_box',
+                'The SEO Playbook – Title, Description & Social Cards',
                 [ $this, 'post_seo_meta_box_render' ],
                 $type,
                 'normal',
@@ -361,62 +361,62 @@ class Ultimate_WP_SEO {
     }
 
     public function post_seo_meta_box_render( $post ) {
-        wp_nonce_field( 'uwps_post_seo_save', 'uwps_post_seo_nonce' );
+        wp_nonce_field( 'tsep_post_seo_save', 'tsep_post_seo_nonce' );
 
-        $seo_title       = get_post_meta( $post->ID, '_uwps_seo_title', true );
-        $meta_desc       = get_post_meta( $post->ID, '_uwps_meta_description', true );
-        $canonical       = get_post_meta( $post->ID, '_uwps_canonical', true );
-        $og_title        = get_post_meta( $post->ID, '_uwps_og_title', true );
-        $og_desc         = get_post_meta( $post->ID, '_uwps_og_description', true );
-        $og_image        = get_post_meta( $post->ID, '_uwps_og_image', true );
-        $twitter_title   = get_post_meta( $post->ID, '_uwps_twitter_title', true );
-        $twitter_desc    = get_post_meta( $post->ID, '_uwps_twitter_description', true );
-        $twitter_image   = get_post_meta( $post->ID, '_uwps_twitter_image', true );
+        $seo_title       = get_post_meta( $post->ID, '_tsep_seo_title', true );
+        $meta_desc       = get_post_meta( $post->ID, '_tsep_meta_description', true );
+        $canonical       = get_post_meta( $post->ID, '_tsep_canonical', true );
+        $og_title        = get_post_meta( $post->ID, '_tsep_og_title', true );
+        $og_desc         = get_post_meta( $post->ID, '_tsep_og_description', true );
+        $og_image        = get_post_meta( $post->ID, '_tsep_og_image', true );
+        $twitter_title   = get_post_meta( $post->ID, '_tsep_twitter_title', true );
+        $twitter_desc    = get_post_meta( $post->ID, '_tsep_twitter_description', true );
+        $twitter_image   = get_post_meta( $post->ID, '_tsep_twitter_image', true );
         ?>
         <table class="form-table">
-            <tr><th>SEO Title</th><td><input type="text" name="uwps_seo_title" value="<?php echo esc_attr( $seo_title ); ?>" class="widefat"></td></tr>
-            <tr><th>Meta Description</th><td><textarea name="uwps_meta_description" rows="2" class="widefat"><?php echo esc_textarea( $meta_desc ); ?></textarea></td></tr>
-            <tr><th>Canonical URL</th><td><input type="url" name="uwps_canonical" value="<?php echo esc_attr( $canonical ); ?>" class="widefat" placeholder="Leave blank to use this post's default permalink"></td></tr>
+            <tr><th>SEO Title</th><td><input type="text" name="tsep_seo_title" value="<?php echo esc_attr( $seo_title ); ?>" class="widefat"></td></tr>
+            <tr><th>Meta Description</th><td><textarea name="tsep_meta_description" rows="2" class="widefat"><?php echo esc_textarea( $meta_desc ); ?></textarea></td></tr>
+            <tr><th>Canonical URL</th><td><input type="url" name="tsep_canonical" value="<?php echo esc_attr( $canonical ); ?>" class="widefat" placeholder="Leave blank to use this post's default permalink"></td></tr>
 
             <tr><th colspan="2"><strong>Open Graph (Facebook, LinkedIn, etc.)</strong></th></tr>
-            <tr><th>OG Title</th><td><input type="text" name="uwps_og_title" value="<?php echo esc_attr( $og_title ); ?>" class="widefat"></td></tr>
-            <tr><th>OG Description</th><td><textarea name="uwps_og_description" rows="2" class="widefat"><?php echo esc_textarea( $og_desc ); ?></textarea></td></tr>
-            <tr><th>OG Image URL</th><td><input type="url" name="uwps_og_image" value="<?php echo esc_attr( $og_image ); ?>" class="widefat" placeholder="https://..."></td></tr>
+            <tr><th>OG Title</th><td><input type="text" name="tsep_og_title" value="<?php echo esc_attr( $og_title ); ?>" class="widefat"></td></tr>
+            <tr><th>OG Description</th><td><textarea name="tsep_og_description" rows="2" class="widefat"><?php echo esc_textarea( $og_desc ); ?></textarea></td></tr>
+            <tr><th>OG Image URL</th><td><input type="url" name="tsep_og_image" value="<?php echo esc_attr( $og_image ); ?>" class="widefat" placeholder="https://..."></td></tr>
 
             <tr><th colspan="2"><strong>Twitter Cards</strong></th></tr>
-            <tr><th>Twitter Title</th><td><input type="text" name="uwps_twitter_title" value="<?php echo esc_attr( $twitter_title ); ?>" class="widefat"></td></tr>
-            <tr><th>Twitter Description</th><td><textarea name="uwps_twitter_description" rows="2" class="widefat"><?php echo esc_textarea( $twitter_desc ); ?></textarea></td></tr>
-            <tr><th>Twitter Image URL</th><td><input type="url" name="uwps_twitter_image" value="<?php echo esc_attr( $twitter_image ); ?>" class="widefat" placeholder="https://..."></td></tr>
+            <tr><th>Twitter Title</th><td><input type="text" name="tsep_twitter_title" value="<?php echo esc_attr( $twitter_title ); ?>" class="widefat"></td></tr>
+            <tr><th>Twitter Description</th><td><textarea name="tsep_twitter_description" rows="2" class="widefat"><?php echo esc_textarea( $twitter_desc ); ?></textarea></td></tr>
+            <tr><th>Twitter Image URL</th><td><input type="url" name="tsep_twitter_image" value="<?php echo esc_attr( $twitter_image ); ?>" class="widefat" placeholder="https://..."></td></tr>
         </table>
         <p><em>Leave fields blank to use automatic fallbacks (post title / excerpt / featured image).</em></p>
         <?php
     }
 
     public function post_seo_save_meta( $post_id ) {
-        if ( ! isset( $_POST['uwps_post_seo_nonce'] ) || ! wp_verify_nonce( $_POST['uwps_post_seo_nonce'], 'uwps_post_seo_save' ) ) return;
+        if ( ! isset( $_POST['tsep_post_seo_nonce'] ) || ! wp_verify_nonce( $_POST['tsep_post_seo_nonce'], 'tsep_post_seo_save' ) ) return;
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
         if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
         $fields = [
-            '_uwps_seo_title', '_uwps_meta_description',
-            '_uwps_og_title', '_uwps_og_description', '_uwps_og_image',
-            '_uwps_twitter_title', '_uwps_twitter_description', '_uwps_twitter_image'
+            '_tsep_seo_title', '_tsep_meta_description',
+            '_tsep_og_title', '_tsep_og_description', '_tsep_og_image',
+            '_tsep_twitter_title', '_tsep_twitter_description', '_tsep_twitter_image'
         ];
 
         foreach ( $fields as $field ) {
-            $key = str_replace( '_uwps_', 'uwps_', $field );
+            $key = str_replace( '_tsep_', 'tsep_', $field );
             if ( isset( $_POST[ $key ] ) ) {
                 update_post_meta( $post_id, $field, sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) );
             }
         }
 
         // Canonical URL needs URL-safe sanitization.
-        if ( isset( $_POST['uwps_canonical'] ) ) {
-            $canonical = esc_url_raw( wp_unslash( $_POST['uwps_canonical'] ) );
+        if ( isset( $_POST['tsep_canonical'] ) ) {
+            $canonical = esc_url_raw( wp_unslash( $_POST['tsep_canonical'] ) );
             if ( $canonical ) {
-                update_post_meta( $post_id, '_uwps_canonical', $canonical );
+                update_post_meta( $post_id, '_tsep_canonical', $canonical );
             } else {
-                delete_post_meta( $post_id, '_uwps_canonical' );
+                delete_post_meta( $post_id, '_tsep_canonical' );
             }
         }
     }
@@ -424,7 +424,7 @@ class Ultimate_WP_SEO {
     /** Wire the custom SEO Title into the actual <title> element. */
     public function post_seo_filter_document_title( $title ) {
         if ( is_singular() ) {
-            $custom = get_post_meta( get_the_ID(), '_uwps_seo_title', true );
+            $custom = get_post_meta( get_the_ID(), '_tsep_seo_title', true );
             if ( ! empty( $custom ) ) return $custom;
         }
         return $title;
@@ -436,8 +436,8 @@ class Ultimate_WP_SEO {
         $post_id = get_the_ID();
 
         // SEO Title & Description
-        $seo_title = get_post_meta( $post_id, '_uwps_seo_title', true ) ?: get_the_title();
-        $meta_desc = get_post_meta( $post_id, '_uwps_meta_description', true ) ?: get_the_excerpt();
+        $seo_title = get_post_meta( $post_id, '_tsep_seo_title', true ) ?: get_the_title();
+        $meta_desc = get_post_meta( $post_id, '_tsep_meta_description', true ) ?: get_the_excerpt();
 
         echo '<meta name="description" content="' . esc_attr( $meta_desc ) . '">' . "\n";
         echo '<meta property="og:title" content="' . esc_attr( $seo_title ) . '">' . "\n";
@@ -446,8 +446,8 @@ class Ultimate_WP_SEO {
         echo '<meta name="twitter:description" content="' . esc_attr( $meta_desc ) . '">' . "\n";
 
         // Images
-        $og_image      = get_post_meta( $post_id, '_uwps_og_image', true ) ?: ( has_post_thumbnail() ? get_the_post_thumbnail_url( $post_id, 'full' ) : '' );
-        $twitter_image = get_post_meta( $post_id, '_uwps_twitter_image', true ) ?: $og_image;
+        $og_image      = get_post_meta( $post_id, '_tsep_og_image', true ) ?: ( has_post_thumbnail() ? get_the_post_thumbnail_url( $post_id, 'full' ) : '' );
+        $twitter_image = get_post_meta( $post_id, '_tsep_twitter_image', true ) ?: $og_image;
 
         if ( $og_image ) {
             echo '<meta property="og:image" content="' . esc_url( $og_image ) . '">' . "\n";
@@ -468,11 +468,11 @@ class Ultimate_WP_SEO {
     }
 
     public function faq_add_meta_box() {
-        if ( ! get_option( 'uwps_post_seo_enabled', 1 ) ) return;
+        if ( ! get_option( 'tsep_post_seo_enabled', 1 ) ) return;
         foreach ( get_post_types( [ 'public' => true ] ) as $type ) {
             add_meta_box(
-                'uwps_faq_box',
-                'Ultimate WP SEO – FAQ Schema',
+                'tsep_faq_box',
+                'The SEO Playbook – FAQ Schema',
                 [ $this, 'faq_meta_box_render' ],
                 $type,
                 'normal',
@@ -482,29 +482,29 @@ class Ultimate_WP_SEO {
     }
 
     public function faq_meta_box_render( $post ) {
-        wp_nonce_field( 'uwps_faq_save', 'uwps_faq_nonce' );
-        $faqs = get_post_meta( $post->ID, '_uwps_faq', true );
+        wp_nonce_field( 'tsep_faq_save', 'tsep_faq_nonce' );
+        $faqs = get_post_meta( $post->ID, '_tsep_faq', true );
         if ( ! is_array( $faqs ) || empty( $faqs ) ) {
             $faqs = [ [ 'q' => '', 'a' => '' ] ];
         }
         ?>
-        <div id="uwps-faq-rows">
+        <div id="tsep-faq-rows">
             <?php foreach ( $faqs as $faq ) : ?>
-                <div class="uwps-faq-row" style="margin-bottom:12px;border-left:3px solid #ccd0d4;padding-left:10px;">
-                    <input type="text" name="uwps_faq_q[]" value="<?php echo esc_attr( $faq['q'] ); ?>" class="widefat" placeholder="Question" style="margin-bottom:4px;">
-                    <textarea name="uwps_faq_a[]" rows="2" class="widefat" placeholder="Answer"><?php echo esc_textarea( $faq['a'] ); ?></textarea>
+                <div class="tsep-faq-row" style="margin-bottom:12px;border-left:3px solid #ccd0d4;padding-left:10px;">
+                    <input type="text" name="tsep_faq_q[]" value="<?php echo esc_attr( $faq['q'] ); ?>" class="widefat" placeholder="Question" style="margin-bottom:4px;">
+                    <textarea name="tsep_faq_a[]" rows="2" class="widefat" placeholder="Answer"><?php echo esc_textarea( $faq['a'] ); ?></textarea>
                 </div>
             <?php endforeach; ?>
         </div>
-        <button type="button" class="button" id="uwps-faq-add">+ Add FAQ</button>
+        <button type="button" class="button" id="tsep-faq-add">+ Add FAQ</button>
         <p class="description">Adds <code>FAQPage</code> schema (JSON-LD) so AI engines and Google can surface these questions and answers. Leave blank to skip.</p>
         <script>
         (function(){
-            var add = document.getElementById('uwps-faq-add');
+            var add = document.getElementById('tsep-faq-add');
             if ( ! add ) return;
             add.addEventListener('click', function(){
-                var rows  = document.getElementById('uwps-faq-rows');
-                var tpl   = rows.querySelector('.uwps-faq-row');
+                var rows  = document.getElementById('tsep-faq-rows');
+                var tpl   = rows.querySelector('.tsep-faq-row');
                 var clone = tpl.cloneNode(true);
                 clone.querySelectorAll('input, textarea').forEach(function(el){ el.value = ''; });
                 rows.appendChild(clone);
@@ -515,12 +515,12 @@ class Ultimate_WP_SEO {
     }
 
     public function faq_save_meta( $post_id ) {
-        if ( ! isset( $_POST['uwps_faq_nonce'] ) || ! wp_verify_nonce( $_POST['uwps_faq_nonce'], 'uwps_faq_save' ) ) return;
+        if ( ! isset( $_POST['tsep_faq_nonce'] ) || ! wp_verify_nonce( $_POST['tsep_faq_nonce'], 'tsep_faq_save' ) ) return;
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
         if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
-        $questions = isset( $_POST['uwps_faq_q'] ) ? (array) wp_unslash( $_POST['uwps_faq_q'] ) : [];
-        $answers   = isset( $_POST['uwps_faq_a'] ) ? (array) wp_unslash( $_POST['uwps_faq_a'] ) : [];
+        $questions = isset( $_POST['tsep_faq_q'] ) ? (array) wp_unslash( $_POST['tsep_faq_q'] ) : [];
+        $answers   = isset( $_POST['tsep_faq_a'] ) ? (array) wp_unslash( $_POST['tsep_faq_a'] ) : [];
 
         $faqs = [];
         foreach ( $questions as $i => $q ) {
@@ -531,15 +531,15 @@ class Ultimate_WP_SEO {
         }
 
         if ( $faqs ) {
-            update_post_meta( $post_id, '_uwps_faq', $faqs );
+            update_post_meta( $post_id, '_tsep_faq', $faqs );
         } else {
-            delete_post_meta( $post_id, '_uwps_faq' );
+            delete_post_meta( $post_id, '_tsep_faq' );
         }
     }
 
     public function faq_output_schema() {
         if ( ! is_singular() ) return;
-        $faqs = get_post_meta( get_the_ID(), '_uwps_faq', true );
+        $faqs = get_post_meta( get_the_ID(), '_tsep_faq', true );
         if ( ! is_array( $faqs ) || empty( $faqs ) ) return;
 
         $main = [];
@@ -580,7 +580,7 @@ class Ultimate_WP_SEO {
             $url = home_url( '/' );
         } elseif ( is_singular() ) {
             $pid    = get_the_ID();
-            $custom = get_post_meta( $pid, '_uwps_canonical', true );
+            $custom = get_post_meta( $pid, '_tsep_canonical', true );
             $url    = $custom ?: get_permalink( $pid );
         } elseif ( is_category() || is_tag() || is_tax() ) {
             $term = get_term_link( get_queried_object() );
@@ -604,72 +604,72 @@ class Ultimate_WP_SEO {
      * ========================================================================== */
     private function init_schema() {
         add_action( 'admin_init', [ $this, 'schema_register_settings' ] );
-        add_action( 'uwps_render_tab_schema', [ $this, 'schema_render_settings' ] );
+        add_action( 'tsep_render_tab_schema', [ $this, 'schema_render_settings' ] );
         add_action( 'wp_head', [ $this, 'schema_output' ], 5 );
     }
     public function schema_register_settings() {
-        register_setting( 'uwps_options_schema', 'uwps_schema_enabled', 'absint' );
-        register_setting( 'uwps_options_schema', 'uwps_schema_organization_name', 'sanitize_text_field' );
-        register_setting( 'uwps_options_schema', 'uwps_schema_same_as', [ $this, 'sanitize_url_list' ] );
-        register_setting( 'uwps_options_schema', 'uwps_schema_enable_article', 'absint' );
-        register_setting( 'uwps_options_schema', 'uwps_schema_enable_newsarticle', 'absint' );
+        register_setting( 'tsep_options_schema', 'tsep_schema_enabled', 'absint' );
+        register_setting( 'tsep_options_schema', 'tsep_schema_organization_name', 'sanitize_text_field' );
+        register_setting( 'tsep_options_schema', 'tsep_schema_same_as', [ $this, 'sanitize_url_list' ] );
+        register_setting( 'tsep_options_schema', 'tsep_schema_enable_article', 'absint' );
+        register_setting( 'tsep_options_schema', 'tsep_schema_enable_newsarticle', 'absint' );
     }
     public function schema_render_settings() {
-        $same_as = (array) get_option( 'uwps_schema_same_as', [] );
+        $same_as = (array) get_option( 'tsep_schema_same_as', [] );
         ?>
         <h2>Schema Markup Generator</h2>
         <table class="form-table">
-            <tr><th>Enable Schema</th><td><input type="checkbox" name="uwps_schema_enabled" value="1" <?php checked( 1, get_option( 'uwps_schema_enabled', 1 ) ); ?>></td></tr>
-            <tr><th>Organization Name</th><td><input type="text" name="uwps_schema_organization_name" value="<?php echo esc_attr( get_option( 'uwps_schema_organization_name', get_bloginfo( 'name' ) ) ); ?>" class="regular-text"></td></tr>
+            <tr><th>Enable Schema</th><td><input type="checkbox" name="tsep_schema_enabled" value="1" <?php checked( 1, get_option( 'tsep_schema_enabled', 1 ) ); ?>></td></tr>
+            <tr><th>Organization Name</th><td><input type="text" name="tsep_schema_organization_name" value="<?php echo esc_attr( get_option( 'tsep_schema_organization_name', get_bloginfo( 'name' ) ) ); ?>" class="regular-text"></td></tr>
             <tr>
                 <th>Organization Profiles (sameAs)</th>
                 <td>
-                    <textarea name="uwps_schema_same_as" rows="4" class="large-text code" placeholder="https://www.linkedin.com/company/...&#10;https://x.com/..."><?php echo esc_textarea( implode( "\n", $same_as ) ); ?></textarea>
+                    <textarea name="tsep_schema_same_as" rows="4" class="large-text code" placeholder="https://www.linkedin.com/company/...&#10;https://x.com/..."><?php echo esc_textarea( implode( "\n", $same_as ) ); ?></textarea>
                     <p class="description">One URL per line. If left blank, the Person profile links above are used so AI engines connect the two entities.</p>
                 </td>
             </tr>
             <tr><th>Post Schema Types</th><td>
-                <label><input type="checkbox" name="uwps_schema_enable_article" value="1" <?php checked( 1, get_option( 'uwps_schema_enable_article', 1 ) ); ?>> Article</label><br>
-                <label><input type="checkbox" name="uwps_schema_enable_newsarticle" value="1" <?php checked( 1, get_option( 'uwps_schema_enable_newsarticle', 1 ) ); ?>> NewsArticle</label>
+                <label><input type="checkbox" name="tsep_schema_enable_article" value="1" <?php checked( 1, get_option( 'tsep_schema_enable_article', 1 ) ); ?>> Article</label><br>
+                <label><input type="checkbox" name="tsep_schema_enable_newsarticle" value="1" <?php checked( 1, get_option( 'tsep_schema_enable_newsarticle', 1 ) ); ?>> NewsArticle</label>
             </td></tr>
         </table>
         <hr>
         <?php
     }
     public function schema_output() {
-        if ( ! get_option( 'uwps_schema_enabled', 1 ) ) return;
+        if ( ! get_option( 'tsep_schema_enabled', 1 ) ) return;
 
         // Securely build JSON-LD using arrays
         $org_schema = [
             '@context' => 'https://schema.org',
             '@type'    => 'Organization',
             '@id'      => home_url( '/#organization' ),
-            'name'     => get_option( 'uwps_schema_organization_name', get_bloginfo( 'name' ) ),
+            'name'     => get_option( 'tsep_schema_organization_name', get_bloginfo( 'name' ) ),
             'url'      => home_url(),
         ];
 
         // sameAs: organization links, falling back to the Person's links.
-        $org_same_as = (array) get_option( 'uwps_schema_same_as', [] );
-        if ( empty( $org_same_as ) && get_option( 'uwps_person_enabled', 1 ) ) {
-            $org_same_as = (array) get_option( 'uwps_person_same_as', [] );
+        $org_same_as = (array) get_option( 'tsep_schema_same_as', [] );
+        if ( empty( $org_same_as ) && get_option( 'tsep_person_enabled', 1 ) ) {
+            $org_same_as = (array) get_option( 'tsep_person_same_as', [] );
         }
         if ( ! empty( $org_same_as ) ) {
             $org_schema['sameAs'] = array_values( $org_same_as );
         }
 
         // Link the Person entity in as founder so the two entities reinforce each other.
-        if ( get_option( 'uwps_person_enabled', 1 ) && get_option( 'uwps_person_name', '' ) ) {
+        if ( get_option( 'tsep_person_enabled', 1 ) && get_option( 'tsep_person_name', '' ) ) {
             $org_schema['founder'] = [
                 '@type' => 'Person',
                 '@id'   => home_url( '/#person' ),
-                'name'  => get_option( 'uwps_person_name', '' ),
+                'name'  => get_option( 'tsep_person_name', '' ),
             ];
         }
 
         echo '<script type="application/ld+json">' . wp_json_encode( $org_schema ) . '</script>' . "\n";
 
         if ( is_single() ) {
-            if ( get_option( 'uwps_schema_enable_newsarticle', 1 ) ) {
+            if ( get_option( 'tsep_schema_enable_newsarticle', 1 ) ) {
                 $news_schema = [
                     '@context'      => 'https://schema.org',
                     '@type'         => 'NewsArticle',
@@ -678,7 +678,7 @@ class Ultimate_WP_SEO {
                 ];
                 echo '<script type="application/ld+json">' . wp_json_encode( $news_schema ) . '</script>' . "\n";
             }
-            if ( get_option( 'uwps_schema_enable_article', 1 ) ) {
+            if ( get_option( 'tsep_schema_enable_article', 1 ) ) {
                 $article_schema = [
                     '@context' => 'https://schema.org',
                     '@type'    => 'Article',
@@ -694,24 +694,24 @@ class Ultimate_WP_SEO {
      * ========================================================================== */
     private function init_local_seo() {
         add_action( 'admin_init', [ $this, 'local_register_settings' ] );
-        add_action( 'uwps_render_tab_schema', [ $this, 'local_render_settings' ] );
-        add_shortcode( 'uwps_local_business', [ $this, 'local_shortcode' ] );
+        add_action( 'tsep_render_tab_schema', [ $this, 'local_render_settings' ] );
+        add_shortcode( 'tsep_local_business', [ $this, 'local_shortcode' ] );
     }
     public function local_register_settings() {
-        register_setting( 'uwps_options_schema', 'uwps_local_enabled', 'absint' );
-        register_setting( 'uwps_options_schema', 'uwps_local_name', 'sanitize_text_field' );
+        register_setting( 'tsep_options_schema', 'tsep_local_enabled', 'absint' );
+        register_setting( 'tsep_options_schema', 'tsep_local_name', 'sanitize_text_field' );
     }
     public function local_render_settings() {
         ?>
         <h2>Local SEO</h2>
         <table class="form-table">
-            <tr><th>Enable Local SEO</th><td><input type="checkbox" name="uwps_local_enabled" value="1" <?php checked( 1, get_option( 'uwps_local_enabled', 1 ) ); ?>></td></tr>
-            <tr><th>Local Business Name</th><td><input type="text" name="uwps_local_name" value="<?php echo esc_attr( get_option( 'uwps_local_name' ) ); ?>" class="regular-text"></td></tr>
+            <tr><th>Enable Local SEO</th><td><input type="checkbox" name="tsep_local_enabled" value="1" <?php checked( 1, get_option( 'tsep_local_enabled', 1 ) ); ?>></td></tr>
+            <tr><th>Local Business Name</th><td><input type="text" name="tsep_local_name" value="<?php echo esc_attr( get_option( 'tsep_local_name' ) ); ?>" class="regular-text"></td></tr>
         </table>
         <?php
     }
     public function local_shortcode() {
-        return '<div class="uwps-local-business"><h3>' . esc_html( get_option( 'uwps_local_name', get_bloginfo( 'name' ) ) ) . '</h3></div>';
+        return '<div class="tsep-local-business"><h3>' . esc_html( get_option( 'tsep_local_name', get_bloginfo( 'name' ) ) ) . '</h3></div>';
     }
 
     /* ==========================================================================
@@ -722,14 +722,14 @@ class Ultimate_WP_SEO {
         add_filter( 'query_vars', [ $this, 'sitemap_register_query_var' ] );
         add_action( 'template_redirect', [ $this, 'sitemap_render' ] );
         add_action( 'admin_init', [ $this, 'sitemap_register_settings' ] );
-        add_action( 'uwps_render_tab_sitemaps', [ $this, 'sitemap_render_settings' ] );
+        add_action( 'tsep_render_tab_sitemaps', [ $this, 'sitemap_render_settings' ] );
     }
-    public function sitemap_add_rewrite_rule() { add_rewrite_rule( '^sitemap\.xml$', 'index.php?uwps_sitemap=1', 'top' ); }
-    public function sitemap_register_query_var( $vars ) { $vars[] = 'uwps_sitemap'; return $vars; }
-    public function sitemap_register_settings() { register_setting( 'uwps_options_sitemaps', 'uwps_sitemap_post_types', [ $this, 'sanitize_post_types' ] ); }
+    public function sitemap_add_rewrite_rule() { add_rewrite_rule( '^sitemap\.xml$', 'index.php?tsep_sitemap=1', 'top' ); }
+    public function sitemap_register_query_var( $vars ) { $vars[] = 'tsep_sitemap'; return $vars; }
+    public function sitemap_register_settings() { register_setting( 'tsep_options_sitemaps', 'tsep_sitemap_post_types', [ $this, 'sanitize_post_types' ] ); }
     public function sanitize_post_types( $input ) { return array_intersect( (array) $input, get_post_types( [ 'public' => true ], 'names' ) ); }
     public function sitemap_render_settings() {
-        $saved = get_option( 'uwps_sitemap_post_types', [ 'post', 'page' ] );
+        $saved = get_option( 'tsep_sitemap_post_types', [ 'post', 'page' ] );
         ?>
         <h2>Smart XML Sitemaps</h2>
         <table class="form-table">
@@ -738,7 +738,7 @@ class Ultimate_WP_SEO {
                 <td>
                     <?php foreach ( get_post_types( [ 'public' => true ], 'objects' ) as $type ) {
                         $checked = in_array( $type->name, $saved, true ) ? 'checked' : '';
-                        echo '<label><input type="checkbox" name="uwps_sitemap_post_types[]" value="' . esc_attr( $type->name ) . '" ' . $checked . '> ' . esc_html( $type->labels->name ) . '</label><br>';
+                        echo '<label><input type="checkbox" name="tsep_sitemap_post_types[]" value="' . esc_attr( $type->name ) . '" ' . $checked . '> ' . esc_html( $type->labels->name ) . '</label><br>';
                     } ?>
                 </td>
             </tr>
@@ -747,9 +747,9 @@ class Ultimate_WP_SEO {
         <?php
     }
     public function sitemap_render() {
-        if ( ! get_query_var( 'uwps_sitemap' ) ) return;
+        if ( ! get_query_var( 'tsep_sitemap' ) ) return;
         header( 'Content-Type: application/xml; charset=utf-8' );
-        $post_types = get_option( 'uwps_sitemap_post_types', [ 'post', 'page' ] ) ?: [ 'post', 'page' ];
+        $post_types = get_option( 'tsep_sitemap_post_types', [ 'post', 'page' ] ) ?: [ 'post', 'page' ];
 
         echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
         foreach ( $post_types as $type ) {
@@ -770,25 +770,25 @@ class Ultimate_WP_SEO {
         add_filter( 'query_vars', [ $this, 'news_sitemap_register_query_var' ] );
         add_action( 'template_redirect', [ $this, 'news_sitemap_render' ] );
         add_action( 'admin_init', [ $this, 'news_sitemap_register_settings' ] );
-        add_action( 'uwps_render_tab_sitemaps', [ $this, 'news_sitemap_render_settings' ] );
+        add_action( 'tsep_render_tab_sitemaps', [ $this, 'news_sitemap_render_settings' ] );
     }
-    public function news_sitemap_add_rewrite_rule() { add_rewrite_rule( '^news-sitemap\.xml$', 'index.php?uwps_news_sitemap=1', 'top' ); }
-    public function news_sitemap_register_query_var( $vars ) { $vars[] = 'uwps_news_sitemap'; return $vars; }
+    public function news_sitemap_add_rewrite_rule() { add_rewrite_rule( '^news-sitemap\.xml$', 'index.php?tsep_news_sitemap=1', 'top' ); }
+    public function news_sitemap_register_query_var( $vars ) { $vars[] = 'tsep_news_sitemap'; return $vars; }
     public function news_sitemap_register_settings() {
-        register_setting( 'uwps_options_sitemaps', 'uwps_news_sitemap_enabled', 'absint' );
-        register_setting( 'uwps_options_sitemaps', 'uwps_news_publication_name', 'sanitize_text_field' );
+        register_setting( 'tsep_options_sitemaps', 'tsep_news_sitemap_enabled', 'absint' );
+        register_setting( 'tsep_options_sitemaps', 'tsep_news_publication_name', 'sanitize_text_field' );
     }
     public function news_sitemap_render_settings() {
         ?>
         <h2>Google News Sitemap</h2>
         <table class="form-table">
-            <tr><th>Enable News Sitemap</th><td><input type="checkbox" name="uwps_news_sitemap_enabled" value="1" <?php checked( 1, get_option( 'uwps_news_sitemap_enabled', 1 ) ); ?>></td></tr>
-            <tr><th>Publication Name</th><td><input type="text" name="uwps_news_publication_name" value="<?php echo esc_attr( get_option( 'uwps_news_publication_name', get_bloginfo( 'name' ) ) ); ?>" class="regular-text"></td></tr>
+            <tr><th>Enable News Sitemap</th><td><input type="checkbox" name="tsep_news_sitemap_enabled" value="1" <?php checked( 1, get_option( 'tsep_news_sitemap_enabled', 1 ) ); ?>></td></tr>
+            <tr><th>Publication Name</th><td><input type="text" name="tsep_news_publication_name" value="<?php echo esc_attr( get_option( 'tsep_news_publication_name', get_bloginfo( 'name' ) ) ); ?>" class="regular-text"></td></tr>
         </table>
         <?php
     }
     public function news_sitemap_render() {
-        if ( ! get_query_var( 'uwps_news_sitemap' ) || ! get_option( 'uwps_news_sitemap_enabled', 1 ) ) return;
+        if ( ! get_query_var( 'tsep_news_sitemap' ) || ! get_option( 'tsep_news_sitemap_enabled', 1 ) ) return;
         header( 'Content-Type: application/xml; charset=utf-8' );
         echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">';
 
@@ -802,7 +802,7 @@ class Ultimate_WP_SEO {
             ]
         ];
         foreach ( get_posts( $news_args ) as $post ) {
-            echo '<url><loc>' . esc_url( get_permalink( $post ) ) . '</loc><news:news><news:publication><news:name>' . esc_html( get_option( 'uwps_news_publication_name', get_bloginfo( 'name' ) ) ) . '</news:name><news:language>en</news:language></news:publication><news:title>' . esc_html( get_the_title( $post ) ) . '</news:title></news:news></url>';
+            echo '<url><loc>' . esc_url( get_permalink( $post ) ) . '</loc><news:news><news:publication><news:name>' . esc_html( get_option( 'tsep_news_publication_name', get_bloginfo( 'name' ) ) ) . '</news:name><news:language>en</news:language></news:publication><news:title>' . esc_html( get_the_title( $post ) ) . '</news:title></news:news></url>';
         }
         echo '</urlset>';
         exit;
@@ -813,42 +813,42 @@ class Ultimate_WP_SEO {
      * ========================================================================== */
     private function init_onpage_analysis() {
         add_action( 'admin_init', [ $this, 'onpage_register_settings' ] );
-        add_action( 'uwps_render_tab_onpage', [ $this, 'onpage_render_settings' ] );
+        add_action( 'tsep_render_tab_onpage', [ $this, 'onpage_render_settings' ] );
         add_action( 'add_meta_boxes', [ $this, 'onpage_add_meta_box' ] );
         add_action( 'save_post', [ $this, 'onpage_save_meta' ] );
     }
-    public function onpage_register_settings() { register_setting( 'uwps_options_onpage', 'uwps_onpage_enabled', 'absint' ); }
+    public function onpage_register_settings() { register_setting( 'tsep_options_onpage', 'tsep_onpage_enabled', 'absint' ); }
     public function onpage_render_settings() {
         ?>
         <h2>On-Page Analysis Checklist</h2>
         <table class="form-table">
-            <tr><th>Enable Checklist</th><td><input type="checkbox" name="uwps_onpage_enabled" value="1" <?php checked( 1, get_option( 'uwps_onpage_enabled', 1 ) ); ?>></td></tr>
+            <tr><th>Enable Checklist</th><td><input type="checkbox" name="tsep_onpage_enabled" value="1" <?php checked( 1, get_option( 'tsep_onpage_enabled', 1 ) ); ?>></td></tr>
         </table>
         <hr>
         <?php
     }
     public function onpage_add_meta_box() {
-        if ( get_option( 'uwps_onpage_enabled', 1 ) ) {
-            add_meta_box( 'uwps_onpage_checklist', 'On-Page SEO Checklist', [ $this, 'onpage_meta_box_render' ], null, 'side', 'high' );
+        if ( get_option( 'tsep_onpage_enabled', 1 ) ) {
+            add_meta_box( 'tsep_onpage_checklist', 'On-Page SEO Checklist', [ $this, 'onpage_meta_box_render' ], null, 'side', 'high' );
         }
     }
     public function onpage_meta_box_render( $post ) {
-        wp_nonce_field( 'uwps_save_onpage', 'uwps_onpage_nonce' );
-        $keyword = get_post_meta( $post->ID, '_uwps_focus_keyword', true );
+        wp_nonce_field( 'tsep_save_onpage', 'tsep_onpage_nonce' );
+        $keyword = get_post_meta( $post->ID, '_tsep_focus_keyword', true );
         ?>
         <label>Focus Keyword</label>
-        <input type="text" name="uwps_focus_keyword" id="uwps_focus_keyword" value="<?php echo esc_attr( $keyword ); ?>" class="widefat">
-        <button type="button" id="uwps-run-analysis" class="button button-primary" style="margin-top:10px;">Run Checklist</button>
-        <div id="uwps-checklist-results" style="margin-top:15px;"></div>
+        <input type="text" name="tsep_focus_keyword" id="tsep_focus_keyword" value="<?php echo esc_attr( $keyword ); ?>" class="widefat">
+        <button type="button" id="tsep-run-analysis" class="button button-primary" style="margin-top:10px;">Run Checklist</button>
+        <div id="tsep-checklist-results" style="margin-top:15px;"></div>
         <?php
     }
     public function onpage_save_meta( $post_id ) {
-        if ( ! isset( $_POST['uwps_onpage_nonce'] ) || ! wp_verify_nonce( $_POST['uwps_onpage_nonce'], 'uwps_save_onpage' ) ) return;
+        if ( ! isset( $_POST['tsep_onpage_nonce'] ) || ! wp_verify_nonce( $_POST['tsep_onpage_nonce'], 'tsep_save_onpage' ) ) return;
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
         if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
-        if ( isset( $_POST['uwps_focus_keyword'] ) ) {
-            update_post_meta( $post_id, '_uwps_focus_keyword', sanitize_text_field( wp_unslash( $_POST['uwps_focus_keyword'] ) ) );
+        if ( isset( $_POST['tsep_focus_keyword'] ) ) {
+            update_post_meta( $post_id, '_tsep_focus_keyword', sanitize_text_field( wp_unslash( $_POST['tsep_focus_keyword'] ) ) );
         }
     }
 
@@ -857,28 +857,28 @@ class Ultimate_WP_SEO {
      * ========================================================================== */
     private function init_breadcrumbs() {
         add_action( 'admin_init', [ $this, 'breadcrumbs_register_settings' ] );
-        add_action( 'uwps_render_tab_onpage', [ $this, 'breadcrumbs_render_settings' ] );
-        add_shortcode( 'uwps_breadcrumbs', [ $this, 'breadcrumbs_shortcode' ] );
+        add_action( 'tsep_render_tab_onpage', [ $this, 'breadcrumbs_render_settings' ] );
+        add_shortcode( 'tsep_breadcrumbs', [ $this, 'breadcrumbs_shortcode' ] );
         add_action( 'wp', [ $this, 'breadcrumbs_maybe_auto_display' ] );
     }
     public function breadcrumbs_register_settings() {
-        register_setting( 'uwps_options_onpage', 'uwps_breadcrumbs_enabled', 'absint' );
-        register_setting( 'uwps_options_onpage', 'uwps_breadcrumbs_separator', 'sanitize_text_field' );
-        register_setting( 'uwps_options_onpage', 'uwps_breadcrumbs_auto_display', 'absint' );
+        register_setting( 'tsep_options_onpage', 'tsep_breadcrumbs_enabled', 'absint' );
+        register_setting( 'tsep_options_onpage', 'tsep_breadcrumbs_separator', 'sanitize_text_field' );
+        register_setting( 'tsep_options_onpage', 'tsep_breadcrumbs_auto_display', 'absint' );
     }
     public function breadcrumbs_render_settings() {
         ?>
         <h2>Breadcrumbs</h2>
         <table class="form-table">
-            <tr><th>Enable Breadcrumbs</th><td><input type="checkbox" name="uwps_breadcrumbs_enabled" value="1" <?php checked( 1, get_option( 'uwps_breadcrumbs_enabled', 1 ) ); ?>></td></tr>
-            <tr><th>Auto-display on Single Posts</th><td><input type="checkbox" name="uwps_breadcrumbs_auto_display" value="1" <?php checked( 1, get_option( 'uwps_breadcrumbs_auto_display', 0 ) ); ?>></td></tr>
-            <tr><th>Separator</th><td><input type="text" name="uwps_breadcrumbs_separator" value="<?php echo esc_attr( get_option( 'uwps_breadcrumbs_separator', '›' ) ); ?>" class="regular-text" style="width:80px;"></td></tr>
+            <tr><th>Enable Breadcrumbs</th><td><input type="checkbox" name="tsep_breadcrumbs_enabled" value="1" <?php checked( 1, get_option( 'tsep_breadcrumbs_enabled', 1 ) ); ?>></td></tr>
+            <tr><th>Auto-display on Single Posts</th><td><input type="checkbox" name="tsep_breadcrumbs_auto_display" value="1" <?php checked( 1, get_option( 'tsep_breadcrumbs_auto_display', 0 ) ); ?>></td></tr>
+            <tr><th>Separator</th><td><input type="text" name="tsep_breadcrumbs_separator" value="<?php echo esc_attr( get_option( 'tsep_breadcrumbs_separator', '›' ) ); ?>" class="regular-text" style="width:80px;"></td></tr>
         </table>
         <?php
     }
     public function breadcrumbs_shortcode() { return $this->get_breadcrumbs_html(); }
     public function breadcrumbs_maybe_auto_display() {
-        if ( get_option( 'uwps_breadcrumbs_auto_display', 0 ) ) {
+        if ( get_option( 'tsep_breadcrumbs_auto_display', 0 ) ) {
             add_filter( 'the_content', [ $this, 'breadcrumbs_auto_insert' ], 5 );
         }
     }
@@ -887,14 +887,14 @@ class Ultimate_WP_SEO {
         return $content;
     }
     private function get_breadcrumbs_html() {
-        if ( ! get_option( 'uwps_breadcrumbs_enabled', 1 ) ) return '';
-        $separator = get_option( 'uwps_breadcrumbs_separator', '›' );
+        if ( ! get_option( 'tsep_breadcrumbs_enabled', 1 ) ) return '';
+        $separator = get_option( 'tsep_breadcrumbs_separator', '›' );
         $items = [
             [ 'name' => 'Home', 'url' => home_url( '/' ), 'link' => true ],
             [ 'name' => get_the_title(), 'url' => '', 'link' => false ]
         ];
 
-        $html = '<nav class="uwps-breadcrumbs" style="margin-bottom:15px;" itemscope itemtype="https://schema.org/BreadcrumbList">';
+        $html = '<nav class="tsep-breadcrumbs" style="margin-bottom:15px;" itemscope itemtype="https://schema.org/BreadcrumbList">';
 
         $position = 1;
         foreach ( $items as $i => $item ) {
@@ -918,31 +918,31 @@ class Ultimate_WP_SEO {
      * ========================================================================== */
     private function init_indexnow() {
         add_action( 'admin_init', [ $this, 'indexnow_register_settings' ] );
-        add_action( 'uwps_render_tab_advanced', [ $this, 'indexnow_render_settings' ] );
+        add_action( 'tsep_render_tab_advanced', [ $this, 'indexnow_render_settings' ] );
         add_action( 'transition_post_status', [ $this, 'indexnow_on_status_change' ], 10, 3 );
-        add_action( 'uwps_indexnow_ping_event', [ $this, 'indexnow_execute_ping' ] );
+        add_action( 'tsep_indexnow_ping_event', [ $this, 'indexnow_execute_ping' ] );
     }
     public function indexnow_register_settings() {
-        register_setting( 'uwps_options_advanced', 'uwps_indexnow_key', 'sanitize_text_field' );
-        register_setting( 'uwps_options_advanced', 'uwps_indexnow_enabled', 'absint' );
+        register_setting( 'tsep_options_advanced', 'tsep_indexnow_key', 'sanitize_text_field' );
+        register_setting( 'tsep_options_advanced', 'tsep_indexnow_enabled', 'absint' );
     }
     public function indexnow_render_settings() {
         ?>
         <h2>IndexNow API</h2>
         <table class="form-table">
-            <tr><th>Enable IndexNow</th><td><input type="checkbox" name="uwps_indexnow_enabled" value="1" <?php checked( 1, get_option( 'uwps_indexnow_enabled', 1 ) ); ?>></td></tr>
-            <tr><th>API Key</th><td><input type="text" name="uwps_indexnow_key" value="<?php echo esc_attr( get_option( 'uwps_indexnow_key' ) ); ?>" class="regular-text" /></td></tr>
+            <tr><th>Enable IndexNow</th><td><input type="checkbox" name="tsep_indexnow_enabled" value="1" <?php checked( 1, get_option( 'tsep_indexnow_enabled', 1 ) ); ?>></td></tr>
+            <tr><th>API Key</th><td><input type="text" name="tsep_indexnow_key" value="<?php echo esc_attr( get_option( 'tsep_indexnow_key' ) ); ?>" class="regular-text" /></td></tr>
         </table>
         <hr>
         <?php
     }
     public function indexnow_on_status_change( $new, $old, $post ) {
-        if ( get_option( 'uwps_indexnow_enabled', 1 ) && $new === 'publish' && ! wp_is_post_revision( $post ) ) {
-            wp_schedule_single_event( time(), 'uwps_indexnow_ping_event', [ get_permalink( $post ) ] );
+        if ( get_option( 'tsep_indexnow_enabled', 1 ) && $new === 'publish' && ! wp_is_post_revision( $post ) ) {
+            wp_schedule_single_event( time(), 'tsep_indexnow_ping_event', [ get_permalink( $post ) ] );
         }
     }
     public function indexnow_execute_ping( $url ) {
-        $key = get_option( 'uwps_indexnow_key' );
+        $key = get_option( 'tsep_indexnow_key' );
         if ( empty( $key ) ) return;
         wp_remote_post( 'https://api.indexnow.org/indexnow', [
             'timeout' => 10,
@@ -959,20 +959,20 @@ class Ultimate_WP_SEO {
         add_filter( 'query_vars', [ $this, 'llms_register_query_var' ] );
         add_action( 'template_redirect', [ $this, 'llms_render' ] );
         add_action( 'admin_init', [ $this, 'llms_register_settings' ] );
-        add_action( 'uwps_render_tab_advanced', [ $this, 'llms_render_settings' ] );
+        add_action( 'tsep_render_tab_advanced', [ $this, 'llms_render_settings' ] );
     }
     public function llms_add_rewrite_rule() {
-        add_rewrite_rule( '^llms\.txt$', 'index.php?uwps_llms_txt=1', 'top' );
-        add_rewrite_rule( '^llms-full\.txt$', 'index.php?uwps_llms_full_txt=1', 'top' );
+        add_rewrite_rule( '^llms\.txt$', 'index.php?tsep_llms_txt=1', 'top' );
+        add_rewrite_rule( '^llms-full\.txt$', 'index.php?tsep_llms_full_txt=1', 'top' );
     }
     public function llms_register_query_var( $vars ) {
-        $vars[] = 'uwps_llms_txt';
-        $vars[] = 'uwps_llms_full_txt';
+        $vars[] = 'tsep_llms_txt';
+        $vars[] = 'tsep_llms_full_txt';
         return $vars;
     }
     public function llms_register_settings() {
-        register_setting( 'uwps_options_advanced', 'uwps_llms_txt_content', 'wp_kses_post' );
-        register_setting( 'uwps_options_advanced', 'uwps_llms_auto_generate', 'absint' );
+        register_setting( 'tsep_options_advanced', 'tsep_llms_txt_content', 'wp_kses_post' );
+        register_setting( 'tsep_options_advanced', 'tsep_llms_auto_generate', 'absint' );
     }
     public function llms_render_settings() {
         ?>
@@ -981,14 +981,14 @@ class Ultimate_WP_SEO {
             <tr>
                 <th>Auto-generate listings</th>
                 <td>
-                    <label><input type="checkbox" name="uwps_llms_auto_generate" value="1" <?php checked( 1, get_option( 'uwps_llms_auto_generate', 1 ) ); ?>> Automatically list pages &amp; posts (title, link, summary) for AI crawlers</label>
+                    <label><input type="checkbox" name="tsep_llms_auto_generate" value="1" <?php checked( 1, get_option( 'tsep_llms_auto_generate', 1 ) ); ?>> Automatically list pages &amp; posts (title, link, summary) for AI crawlers</label>
                     <p class="description">Serves a structured file at <code><?php echo esc_url( home_url( '/llms.txt' ) ); ?></code> and a fuller version (with content) at <code><?php echo esc_url( home_url( '/llms-full.txt' ) ); ?></code>.</p>
                 </td>
             </tr>
             <tr>
                 <th>Custom intro / content</th>
                 <td>
-                    <textarea name="uwps_llms_txt_content" rows="6" class="large-text code"><?php echo esc_textarea( get_option( 'uwps_llms_txt_content', '' ) ); ?></textarea>
+                    <textarea name="tsep_llms_txt_content" rows="6" class="large-text code"><?php echo esc_textarea( get_option( 'tsep_llms_txt_content', '' ) ); ?></textarea>
                     <p class="description">Optional. Placed near the top, just under the site title.</p>
                 </td>
             </tr>
@@ -997,12 +997,12 @@ class Ultimate_WP_SEO {
         <?php
     }
     public function llms_render() {
-        if ( get_query_var( 'uwps_llms_txt' ) ) {
+        if ( get_query_var( 'tsep_llms_txt' ) ) {
             header( 'Content-Type: text/plain; charset=' . get_option( 'blog_charset' ) );
             echo $this->llms_build_content( false );
             exit;
         }
-        if ( get_query_var( 'uwps_llms_full_txt' ) ) {
+        if ( get_query_var( 'tsep_llms_full_txt' ) ) {
             header( 'Content-Type: text/plain; charset=' . get_option( 'blog_charset' ) );
             echo $this->llms_build_content( true );
             exit;
@@ -1012,8 +1012,8 @@ class Ultimate_WP_SEO {
     private function llms_build_content( $full = false ) {
         $name   = get_bloginfo( 'name' );
         $desc   = get_bloginfo( 'description' );
-        $custom = trim( (string) get_option( 'uwps_llms_txt_content', '' ) );
-        $auto   = get_option( 'uwps_llms_auto_generate', 1 );
+        $custom = trim( (string) get_option( 'tsep_llms_txt_content', '' ) );
+        $auto   = get_option( 'tsep_llms_auto_generate', 1 );
 
         $out = '# ' . $name . "\n";
         if ( $desc ) $out .= '> ' . $desc . "\n";
@@ -1024,12 +1024,12 @@ class Ultimate_WP_SEO {
         }
 
         // Person / author block.
-        if ( get_option( 'uwps_person_enabled', 1 ) && get_option( 'uwps_person_name', '' ) ) {
+        if ( get_option( 'tsep_person_enabled', 1 ) && get_option( 'tsep_person_name', '' ) ) {
             $out .= "## About\n";
-            $out .= '- Name: ' . get_option( 'uwps_person_name', '' ) . "\n";
-            if ( $job = get_option( 'uwps_person_job_title', '' ) ) $out .= '- Title: ' . $job . "\n";
-            if ( $bio = get_option( 'uwps_person_bio', '' ) ) $out .= '- Bio: ' . trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $bio ) ) ) . "\n";
-            foreach ( (array) get_option( 'uwps_person_same_as', [] ) as $link ) {
+            $out .= '- Name: ' . get_option( 'tsep_person_name', '' ) . "\n";
+            if ( $job = get_option( 'tsep_person_job_title', '' ) ) $out .= '- Title: ' . $job . "\n";
+            if ( $bio = get_option( 'tsep_person_bio', '' ) ) $out .= '- Bio: ' . trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $bio ) ) ) . "\n";
+            foreach ( (array) get_option( 'tsep_person_same_as', [] ) as $link ) {
                 $out .= '- Profile: ' . $link . "\n";
             }
             $out .= "\n";
@@ -1101,29 +1101,29 @@ class Ultimate_WP_SEO {
         add_filter( 'query_vars', [ $this, 'robots_register_query_var' ] );
         add_action( 'template_redirect', [ $this, 'robots_render' ] );
         add_action( 'admin_init', [ $this, 'robots_register_settings' ] );
-        add_action( 'uwps_render_tab_advanced', [ $this, 'robots_render_settings' ] );
+        add_action( 'tsep_render_tab_advanced', [ $this, 'robots_render_settings' ] );
         remove_action( 'do_robots', 'do_robots' );
         add_action( 'do_robots', [ $this, 'robots_override_default' ] );
     }
-    public function robots_add_rewrite_rule() { add_rewrite_rule( '^robots\.txt$', 'index.php?uwps_robots_txt=1', 'top' ); }
-    public function robots_register_query_var( $vars ) { $vars[] = 'uwps_robots_txt'; return $vars; }
-    public function robots_register_settings() { register_setting( 'uwps_options_advanced', 'uwps_robots_content', 'wp_strip_all_tags' ); }
+    public function robots_add_rewrite_rule() { add_rewrite_rule( '^robots\.txt$', 'index.php?tsep_robots_txt=1', 'top' ); }
+    public function robots_register_query_var( $vars ) { $vars[] = 'tsep_robots_txt'; return $vars; }
+    public function robots_register_settings() { register_setting( 'tsep_options_advanced', 'tsep_robots_content', 'wp_strip_all_tags' ); }
     public function robots_render_settings() {
         ?>
         <h2>Robots.txt Editor</h2>
         <table class="form-table">
             <tr>
                 <th>Custom Robots.txt</th>
-                <td><textarea name="uwps_robots_content" rows="6" class="large-text code"><?php echo esc_textarea( get_option( 'uwps_robots_content', '' ) ); ?></textarea></td>
+                <td><textarea name="tsep_robots_content" rows="6" class="large-text code"><?php echo esc_textarea( get_option( 'tsep_robots_content', '' ) ); ?></textarea></td>
             </tr>
         </table>
         <hr>
         <?php
     }
     public function robots_render() {
-        if ( get_query_var( 'uwps_robots_txt' ) ) {
+        if ( get_query_var( 'tsep_robots_txt' ) ) {
             header( 'Content-Type: text/plain; charset=' . get_option( 'blog_charset' ) );
-            $custom = get_option( 'uwps_robots_content', '' );
+            $custom = get_option( 'tsep_robots_content', '' );
             echo ! empty( trim( $custom ) ) ? wp_strip_all_tags( $custom ) : "User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php\n\nSitemap: " . home_url('/sitemap.xml');
             exit;
         }
@@ -1135,27 +1135,27 @@ class Ultimate_WP_SEO {
      * ========================================================================== */
     private function init_webmaster_tools() {
         add_action( 'admin_init', [ $this, 'webmaster_register_settings' ] );
-        add_action( 'uwps_render_tab_advanced', [ $this, 'webmaster_render_settings' ] );
+        add_action( 'tsep_render_tab_advanced', [ $this, 'webmaster_render_settings' ] );
         add_action( 'wp_head', [ $this, 'webmaster_output_meta_tags' ] );
     }
     public function webmaster_register_settings() {
-        register_setting( 'uwps_options_advanced', 'uwps_google_verify', 'sanitize_text_field' );
-        register_setting( 'uwps_options_advanced', 'uwps_bing_verify', 'sanitize_text_field' );
+        register_setting( 'tsep_options_advanced', 'tsep_google_verify', 'sanitize_text_field' );
+        register_setting( 'tsep_options_advanced', 'tsep_bing_verify', 'sanitize_text_field' );
     }
     public function webmaster_render_settings() {
         ?>
         <h2>Webmaster Tools Verification</h2>
         <table class="form-table">
-            <tr><th>Google Search Console</th><td><input type="text" name="uwps_google_verify" value="<?php echo esc_attr( get_option( 'uwps_google_verify' ) ); ?>" class="regular-text" /></td></tr>
-            <tr><th>Bing Webmaster</th><td><input type="text" name="uwps_bing_verify" value="<?php echo esc_attr( get_option( 'uwps_bing_verify' ) ); ?>" class="regular-text" /></td></tr>
+            <tr><th>Google Search Console</th><td><input type="text" name="tsep_google_verify" value="<?php echo esc_attr( get_option( 'tsep_google_verify' ) ); ?>" class="regular-text" /></td></tr>
+            <tr><th>Bing Webmaster</th><td><input type="text" name="tsep_bing_verify" value="<?php echo esc_attr( get_option( 'tsep_bing_verify' ) ); ?>" class="regular-text" /></td></tr>
         </table>
         <?php
     }
     public function webmaster_output_meta_tags() {
-        if ( $google = get_option( 'uwps_google_verify' ) ) echo '<meta name="google-site-verification" content="' . esc_attr( $google ) . '">' . "\n";
-        if ( $bing   = get_option( 'uwps_bing_verify' ) )   echo '<meta name="msvalidate.01" content="' . esc_attr( $bing ) . '">' . "\n";
+        if ( $google = get_option( 'tsep_google_verify' ) ) echo '<meta name="google-site-verification" content="' . esc_attr( $google ) . '">' . "\n";
+        if ( $bing   = get_option( 'tsep_bing_verify' ) )   echo '<meta name="msvalidate.01" content="' . esc_attr( $bing ) . '">' . "\n";
     }
 }
 
 // Initialize
-Ultimate_WP_SEO::get_instance();
+The_SEO_Playbook::get_instance();
