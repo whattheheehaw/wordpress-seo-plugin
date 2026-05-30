@@ -55,6 +55,7 @@ class The_SEO_Playbook {
         $this->init_webmaster_tools();
         $this->init_indexnow();
         $this->init_post_seo();                // Post SEO + Social Cards
+        $this->init_updater();                 // GitHub auto-updater
 
         add_action( 'admin_menu', [ $this, 'add_settings_page' ] );
         add_action( 'wp_head', [ $this, 'post_seo_output_meta_tags' ], 5 ); // Early output
@@ -1154,6 +1155,98 @@ class The_SEO_Playbook {
     public function webmaster_output_meta_tags() {
         if ( $google = get_option( 'tsep_google_verify' ) ) echo '<meta name="google-site-verification" content="' . esc_attr( $google ) . '">' . "\n";
         if ( $bing   = get_option( 'tsep_bing_verify' ) )   echo '<meta name="msvalidate.01" content="' . esc_attr( $bing ) . '">' . "\n";
+    }
+
+    /* ==========================================================================
+     * AUTO-UPDATER: pulls updates from GitHub via update-info.json
+     * ========================================================================== */
+    private function init_updater() {
+        add_filter( 'pre_set_site_transient_update_plugins', [ $this, 'updater_inject' ] );
+        add_filter( 'plugins_api', [ $this, 'updater_plugin_info' ], 20, 3 );
+        add_filter( 'upgrader_source_selection', [ $this, 'updater_fix_source_dir' ], 10, 4 );
+    }
+
+    private function updater_manifest_url() {
+        return 'https://raw.githubusercontent.com/whattheheehaw/wordpress-seo-plugin/main/update-info.json';
+    }
+
+    private function updater_get_manifest() {
+        $cached = get_transient( 'tsep_update_manifest' );
+        if ( $cached ) return $cached;
+
+        $response = wp_remote_get( $this->updater_manifest_url(), [ 'timeout' => 10 ] );
+        if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+            return null;
+        }
+        $data = json_decode( wp_remote_retrieve_body( $response ) );
+        if ( empty( $data->version ) ) return null;
+
+        set_transient( 'tsep_update_manifest', $data, 12 * HOUR_IN_SECONDS );
+        return $data;
+    }
+
+    public function updater_inject( $transient ) {
+        if ( empty( $transient->checked ) ) return $transient;
+
+        $manifest = $this->updater_get_manifest();
+        if ( ! $manifest ) return $transient;
+
+        $plugin_file     = plugin_basename( __FILE__ );
+        $current_version = $transient->checked[ $plugin_file ] ?? TSEP_VERSION;
+
+        if ( version_compare( $manifest->version, $current_version, '>' ) ) {
+            $transient->response[ $plugin_file ] = (object) [
+                'slug'        => 'the-seo-playbook',
+                'plugin'      => $plugin_file,
+                'new_version' => $manifest->version,
+                'url'         => 'https://github.com/whattheheehaw/wordpress-seo-plugin',
+                'package'     => $manifest->download_url,
+            ];
+        }
+        return $transient;
+    }
+
+    public function updater_plugin_info( $result, $action, $args ) {
+        if ( 'plugin_information' !== $action ) return $result;
+        if ( empty( $args->slug ) || 'the-seo-playbook' !== $args->slug ) return $result;
+
+        $manifest = $this->updater_get_manifest();
+        if ( ! $manifest ) return $result;
+
+        return (object) [
+            'name'          => 'The SEO Playbook',
+            'slug'          => 'the-seo-playbook',
+            'version'       => $manifest->version,
+            'author'        => 'Amelia Hollis',
+            'homepage'      => 'https://github.com/whattheheehaw/wordpress-seo-plugin',
+            'download_link' => $manifest->download_url,
+            'requires'      => '6.4',
+            'requires_php'  => '8.0',
+            'last_updated'  => $manifest->last_updated ?? '',
+            'sections'      => [
+                'description' => 'A modular SEO suite with Person entity, FAQ schema, canonical URLs, and AI-optimised llms.txt.',
+                'changelog'   => $manifest->changelog ?? '',
+            ],
+        ];
+    }
+
+    /**
+     * GitHub archive zips unpack to a folder named after the repo (e.g. wordpress-seo-plugin-main).
+     * WordPress requires the folder to match the plugin slug. This filter renames it before install.
+     */
+    public function updater_fix_source_dir( $source, $remote_source, $upgrader, $hook_extra = [] ) {
+        if ( empty( $hook_extra['plugin'] ) || plugin_basename( __FILE__ ) !== $hook_extra['plugin'] ) {
+            return $source;
+        }
+
+        $expected = trailingslashit( dirname( untrailingslashit( $source ) ) ) . 'the-seo-playbook/';
+        if ( trailingslashit( $source ) === $expected ) return $source;
+
+        global $wp_filesystem;
+        if ( $wp_filesystem && $wp_filesystem->move( $source, $expected ) ) {
+            return $expected;
+        }
+        return $source;
     }
 }
 
