@@ -1,0 +1,8 @@
+{
+  "version": "2.2.0",
+  "download_url": "https://github.com/whattheheehaw/wordpress-seo-plugin/archive/refs/heads/main.zip",
+  "requires": "6.4",
+  "requires_php": "8.0",
+  "last_updated": "2026-05-30",
+  "changelog": "v2.2.0 - Added Person entity, FAQ schema, canonical URLs, document title control, enhanced llms.txt with llms-full.txt, and GitHub auto-updater."
+}
