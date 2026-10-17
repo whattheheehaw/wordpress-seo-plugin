@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       The SEO Playbook
  * Plugin URI:        https://ameliahollis.net/the-seo-playbook
- * Description:       A powerful, modular SEO suite for WordPress. Includes Post SEO + Social Cards, a Person/Author entity with an auto-built profile page, FAQ schema, canonical URLs, and enhanced llms.txt for AI search visibility.
- * Version:           2.2.0
+ * Description:       A powerful, modular SEO suite for WordPress. Includes Post SEO + Social Cards, a Person/Author entity with an auto-built profile page, FAQ schema, canonical URLs, a paginated XML sitemap index, and enhanced llms.txt for AI search visibility.
+ * Version:           2.3.0
  * Requires at least: 6.4
  * Requires PHP:      8.0
  * Author:            Amelia Hollis
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'TSEP_VERSION', '2.2.0' );
+define( 'TSEP_VERSION', '2.3.0' );
 
 class The_SEO_Playbook {
 
@@ -34,10 +34,28 @@ class The_SEO_Playbook {
 
     private function init_hooks() {
         add_action( 'plugins_loaded', [ $this, 'init' ] );
+        add_action( 'admin_init', [ $this, 'maybe_upgrade' ] );
         add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), [ $this, 'add_settings_link' ] );
 
         register_activation_hook( __FILE__, [ $this, 'activate' ] );
         register_deactivation_hook( __FILE__, [ $this, 'deactivate' ] );
+    }
+
+    /**
+     * Runs once after the plugin version changes (e.g. via the GitHub auto-updater). Re-registers
+     * rewrite rules and flushes them so new routes — such as the paginated sitemap sub-files — resolve
+     * without the user having to visit Settings → Permalinks manually.
+     */
+    public function maybe_upgrade() {
+        if ( get_option( 'tsep_version' ) === TSEP_VERSION ) return;
+
+        $this->sitemap_add_rewrite_rule();
+        $this->news_sitemap_add_rewrite_rule();
+        $this->llms_add_rewrite_rule();
+        $this->robots_add_rewrite_rule();
+        flush_rewrite_rules();
+
+        update_option( 'tsep_version', TSEP_VERSION );
     }
 
     public function init() {
@@ -112,6 +130,7 @@ class The_SEO_Playbook {
         $this->news_sitemap_add_rewrite_rule();
         $this->person_maybe_create_page();
         flush_rewrite_rules();
+        update_option( 'tsep_version', TSEP_VERSION );
     }
     public function deactivate() { flush_rewrite_rules(); }
 
@@ -716,7 +735,7 @@ class The_SEO_Playbook {
     }
 
     /* ==========================================================================
-     * 3. Smart XML Sitemaps
+     * 3. Smart XML Sitemaps (sitemap index + paginated per-type sub-sitemaps)
      * ========================================================================== */
     private function init_sitemaps() {
         add_action( 'init', [ $this, 'sitemap_add_rewrite_rule' ] );
@@ -725,14 +744,23 @@ class The_SEO_Playbook {
         add_action( 'admin_init', [ $this, 'sitemap_register_settings' ] );
         add_action( 'tsep_render_tab_sitemaps', [ $this, 'sitemap_render_settings' ] );
     }
-    public function sitemap_add_rewrite_rule() { add_rewrite_rule( '^sitemap\.xml$', 'index.php?tsep_sitemap=1', 'top' ); }
-    public function sitemap_register_query_var( $vars ) { $vars[] = 'tsep_sitemap'; return $vars; }
+    public function sitemap_add_rewrite_rule() {
+        add_rewrite_rule( '^sitemap\.xml$', 'index.php?tsep_sitemap=index', 'top' );
+        add_rewrite_rule( '^sitemap-([a-z0-9_-]+)-([0-9]+)\.xml$', 'index.php?tsep_sitemap=sub&tsep_sitemap_type=$matches[1]&tsep_sitemap_page=$matches[2]', 'top' );
+    }
+    public function sitemap_register_query_var( $vars ) {
+        $vars[] = 'tsep_sitemap';
+        $vars[] = 'tsep_sitemap_type';
+        $vars[] = 'tsep_sitemap_page';
+        return $vars;
+    }
     public function sitemap_register_settings() { register_setting( 'tsep_options_sitemaps', 'tsep_sitemap_post_types', [ $this, 'sanitize_post_types' ] ); }
     public function sanitize_post_types( $input ) { return array_intersect( (array) $input, get_post_types( [ 'public' => true ], 'names' ) ); }
     public function sitemap_render_settings() {
         $saved = get_option( 'tsep_sitemap_post_types', [ 'post', 'page' ] );
         ?>
         <h2>Smart XML Sitemaps</h2>
+        <p>Outputs a <strong>sitemap index</strong> at <code><?php echo esc_url( home_url( '/sitemap.xml' ) ); ?></code> that links to paginated per-type sub-sitemaps (up to <?php echo (int) $this->sitemap_per_page(); ?> URLs each), so large sites are fully covered. Submit the index URL to Google Search Console &amp; Bing.</p>
         <table class="form-table">
             <tr>
                 <th>Include Post Types</th>
@@ -747,20 +775,109 @@ class The_SEO_Playbook {
         <hr>
         <?php
     }
-    public function sitemap_render() {
-        if ( ! get_query_var( 'tsep_sitemap' ) ) return;
-        header( 'Content-Type: application/xml; charset=utf-8' );
-        $post_types = get_option( 'tsep_sitemap_post_types', [ 'post', 'page' ] ) ?: [ 'post', 'page' ];
 
-        echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-        foreach ( $post_types as $type ) {
-            // Limited to 1000 to prevent Fatal OOM Errors
-            foreach ( get_posts( [ 'post_type' => $type, 'post_status' => 'publish', 'posts_per_page' => 1000 ] ) as $post ) {
-                echo '<url><loc>' . esc_url( get_permalink( $post ) ) . '</loc><lastmod>' . get_post_modified_time( 'c', true, $post ) . '</lastmod></url>';
+    /** URLs per sub-sitemap page. Filterable; capped well under the 50k spec limit to avoid OOM. */
+    private function sitemap_per_page() {
+        return (int) apply_filters( 'tsep_sitemap_per_page', 1000 );
+    }
+
+    /** Post types that are enabled for the sitemap AND currently registered + public. */
+    private function sitemap_post_types() {
+        $saved = get_option( 'tsep_sitemap_post_types', [ 'post', 'page' ] ) ?: [ 'post', 'page' ];
+        $valid = get_post_types( [ 'public' => true ], 'names' );
+        return array_values( array_intersect( $saved, $valid ) );
+    }
+
+    public function sitemap_render() {
+        $mode = get_query_var( 'tsep_sitemap' );
+        if ( ! $mode ) return;
+
+        header( 'Content-Type: application/xml; charset=utf-8' );
+        header( 'X-Robots-Tag: noindex, follow', true );
+
+        if ( 'sub' === $mode ) {
+            $this->sitemap_render_sub();
+        } else {
+            $this->sitemap_render_index();
+        }
+        exit;
+    }
+
+    private function sitemap_render_index() {
+        $per_page   = $this->sitemap_per_page();
+        $news_on    = get_option( 'tsep_news_sitemap_enabled', 1 );
+
+        echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        echo '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+
+        foreach ( $this->sitemap_post_types() as $type ) {
+            $counts = wp_count_posts( $type );
+            $total  = isset( $counts->publish ) ? (int) $counts->publish : 0;
+            if ( $total < 1 ) continue;
+
+            $pages   = (int) ceil( $total / $per_page );
+            $lastmod = $this->sitemap_type_lastmod( $type );
+
+            for ( $page = 1; $page <= $pages; $page++ ) {
+                echo '<sitemap><loc>' . esc_url( home_url( "/sitemap-{$type}-{$page}.xml" ) ) . '</loc>';
+                if ( $lastmod ) {
+                    echo '<lastmod>' . esc_html( $lastmod ) . '</lastmod>';
+                }
+                echo '</sitemap>' . "\n";
             }
         }
+
+        if ( $news_on ) {
+            echo '<sitemap><loc>' . esc_url( home_url( '/news-sitemap.xml' ) ) . '</loc></sitemap>' . "\n";
+        }
+
+        echo '</sitemapindex>';
+    }
+
+    private function sitemap_render_sub() {
+        $type = sanitize_key( get_query_var( 'tsep_sitemap_type' ) );
+        $page = max( 1, (int) get_query_var( 'tsep_sitemap_page' ) );
+
+        // Only serve sub-sitemaps for post types that are actually enabled.
+        if ( ! in_array( $type, $this->sitemap_post_types(), true ) ) {
+            status_header( 404 );
+            echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>';
+            return;
+        }
+
+        $per_page = $this->sitemap_per_page();
+        $posts    = get_posts( [
+            'post_type'        => $type,
+            'post_status'      => 'publish',
+            'posts_per_page'   => $per_page,
+            'offset'           => ( $page - 1 ) * $per_page,
+            'orderby'          => 'ID',
+            'order'            => 'ASC',
+            'no_found_rows'    => true,
+            'suppress_filters' => false,
+        ] );
+
+        echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+        foreach ( $posts as $post ) {
+            echo '<url><loc>' . esc_url( get_permalink( $post ) ) . '</loc><lastmod>' . esc_html( get_post_modified_time( 'c', true, $post ) ) . '</lastmod></url>' . "\n";
+        }
         echo '</urlset>';
-        exit;
+    }
+
+    /** Most recent modified time for a post type, as an ISO-8601 string (or '' if none). */
+    private function sitemap_type_lastmod( $type ) {
+        $latest = get_posts( [
+            'post_type'        => $type,
+            'post_status'      => 'publish',
+            'posts_per_page'   => 1,
+            'orderby'          => 'modified',
+            'order'            => 'DESC',
+            'no_found_rows'    => true,
+            'fields'           => 'ids',
+        ] );
+        if ( empty( $latest ) ) return '';
+        return get_post_modified_time( 'c', true, $latest[0] );
     }
 
     /* ==========================================================================

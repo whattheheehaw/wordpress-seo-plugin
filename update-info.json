@@ -1,8 +1,8 @@
 {
-  "version": "2.2.0",
+  "version": "2.3.0",
   "download_url": "https://github.com/whattheheehaw/wordpress-seo-plugin/archive/refs/heads/main.zip",
   "requires": "6.4",
   "requires_php": "8.0",
-  "last_updated": "2026-05-30",
-  "changelog": "v2.2.0 - Added Person entity, FAQ schema, canonical URLs, document title control, enhanced llms.txt with llms-full.txt, and GitHub auto-updater."
+  "last_updated": "2026-10-17",
+  "changelog": "v2.3.0 - Smart XML Sitemaps rebuilt as a paginated sitemap index (per-type sub-sitemaps, no 1000-URL cap, news sitemap linked in). Rewrite rules now auto-flush on version change after an update. v2.2.0 - Person entity, FAQ schema, canonical URLs, document title control, enhanced llms.txt, GitHub auto-updater."
 }
