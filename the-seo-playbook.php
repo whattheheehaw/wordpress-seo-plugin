@@ -3,7 +3,7 @@
  * Plugin Name:       The SEO Playbook
  * Plugin URI:        https://ameliahollis.net/the-seo-playbook
  * Description:       A powerful, modular SEO suite for WordPress. Includes Post SEO + Social Cards, a Person/Author entity with an auto-built profile page, FAQ schema, canonical URLs, a paginated XML sitemap index, and enhanced llms.txt for AI search visibility.
- * Version:           2.3.0
+ * Version:           2.4.0
  * Requires at least: 6.4
  * Requires PHP:      8.0
  * Author:            Amelia Hollis
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'TSEP_VERSION', '2.3.0' );
+define( 'TSEP_VERSION', '2.4.0' );
 
 class The_SEO_Playbook {
 
@@ -100,7 +100,11 @@ class The_SEO_Playbook {
 
     public function render_settings_page() {
         if ( ! current_user_can( 'manage_options' ) ) return;
-        $active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'schema';
+        $allowed_tabs = [ 'schema', 'sitemaps', 'onpage', 'post-seo', 'advanced' ];
+        $active_tab   = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'schema';
+        if ( ! in_array( $active_tab, $allowed_tabs, true ) ) {
+            $active_tab = 'schema';
+        }
         ?>
         <div class="wrap">
             <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
@@ -133,6 +137,18 @@ class The_SEO_Playbook {
         update_option( 'tsep_version', TSEP_VERSION );
     }
     public function deactivate() { flush_rewrite_rules(); }
+
+    /**
+     * Print a JSON-LD block safely. The JSON_HEX_* flags encode <, >, &, ' and " so that no stored
+     * value (post title, bio, FAQ answer, org name, etc.) can terminate the <script> element with a
+     * literal </script> or inject markup — i.e. this closes the inline-script XSS vector that a plain
+     * wp_json_encode() leaves open. Output is already fully escaped, so it is echoed as-is.
+     */
+    private function print_json_ld( $data ) {
+        $json = wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE );
+        if ( false === $json ) return;
+        echo '<script type="application/ld+json">' . $json . '</script>' . "\n";
+    }
 
     /* ==========================================================================
      * NEW MODULE: Person / Author Entity + auto-built profile page
@@ -292,7 +308,7 @@ class The_SEO_Playbook {
             $person['worksFor'] = [ '@id' => home_url( '/#organization' ) ];
         }
 
-        echo '<script type="application/ld+json">' . wp_json_encode( $person ) . '</script>' . "\n";
+        $this->print_json_ld( $person );
     }
 
     private function person_link_label( $url ) {
@@ -413,20 +429,35 @@ class The_SEO_Playbook {
     }
 
     public function post_seo_save_meta( $post_id ) {
-        if ( ! isset( $_POST['tsep_post_seo_nonce'] ) || ! wp_verify_nonce( $_POST['tsep_post_seo_nonce'], 'tsep_post_seo_save' ) ) return;
+        if ( ! isset( $_POST['tsep_post_seo_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['tsep_post_seo_nonce'] ) ), 'tsep_post_seo_save' ) ) return;
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
         if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
-        $fields = [
+        // Plain-text fields.
+        $text_fields = [
             '_tsep_seo_title', '_tsep_meta_description',
-            '_tsep_og_title', '_tsep_og_description', '_tsep_og_image',
-            '_tsep_twitter_title', '_tsep_twitter_description', '_tsep_twitter_image'
+            '_tsep_og_title', '_tsep_og_description',
+            '_tsep_twitter_title', '_tsep_twitter_description',
         ];
 
-        foreach ( $fields as $field ) {
+        foreach ( $text_fields as $field ) {
             $key = str_replace( '_tsep_', 'tsep_', $field );
             if ( isset( $_POST[ $key ] ) ) {
                 update_post_meta( $post_id, $field, sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) );
+            }
+        }
+
+        // URL fields must be stored URL-safe, not merely tag-stripped.
+        $url_fields = [ '_tsep_og_image', '_tsep_twitter_image' ];
+        foreach ( $url_fields as $field ) {
+            $key = str_replace( '_tsep_', 'tsep_', $field );
+            if ( isset( $_POST[ $key ] ) ) {
+                $url = esc_url_raw( wp_unslash( $_POST[ $key ] ) );
+                if ( $url ) {
+                    update_post_meta( $post_id, $field, $url );
+                } else {
+                    delete_post_meta( $post_id, $field );
+                }
             }
         }
 
@@ -535,7 +566,7 @@ class The_SEO_Playbook {
     }
 
     public function faq_save_meta( $post_id ) {
-        if ( ! isset( $_POST['tsep_faq_nonce'] ) || ! wp_verify_nonce( $_POST['tsep_faq_nonce'], 'tsep_faq_save' ) ) return;
+        if ( ! isset( $_POST['tsep_faq_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['tsep_faq_nonce'] ) ), 'tsep_faq_save' ) ) return;
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
         if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
@@ -581,7 +612,7 @@ class The_SEO_Playbook {
             '@type'      => 'FAQPage',
             'mainEntity' => $main,
         ];
-        echo '<script type="application/ld+json">' . wp_json_encode( $schema ) . '</script>' . "\n";
+        $this->print_json_ld( $schema );
     }
 
     /* ==========================================================================
@@ -686,7 +717,7 @@ class The_SEO_Playbook {
             ];
         }
 
-        echo '<script type="application/ld+json">' . wp_json_encode( $org_schema ) . '</script>' . "\n";
+        $this->print_json_ld( $org_schema );
 
         if ( is_single() ) {
             if ( get_option( 'tsep_schema_enable_newsarticle', 1 ) ) {
@@ -696,7 +727,7 @@ class The_SEO_Playbook {
                     'headline'      => get_the_title(),
                     'datePublished' => get_the_date( 'c' ),
                 ];
-                echo '<script type="application/ld+json">' . wp_json_encode( $news_schema ) . '</script>' . "\n";
+                $this->print_json_ld( $news_schema );
             }
             if ( get_option( 'tsep_schema_enable_article', 1 ) ) {
                 $article_schema = [
@@ -704,7 +735,7 @@ class The_SEO_Playbook {
                     '@type'    => 'Article',
                     'headline' => get_the_title(),
                 ];
-                echo '<script type="application/ld+json">' . wp_json_encode( $article_schema ) . '</script>' . "\n";
+                $this->print_json_ld( $article_schema );
             }
         }
     }
@@ -961,7 +992,7 @@ class The_SEO_Playbook {
         <?php
     }
     public function onpage_save_meta( $post_id ) {
-        if ( ! isset( $_POST['tsep_onpage_nonce'] ) || ! wp_verify_nonce( $_POST['tsep_onpage_nonce'], 'tsep_save_onpage' ) ) return;
+        if ( ! isset( $_POST['tsep_onpage_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['tsep_onpage_nonce'] ) ), 'tsep_save_onpage' ) ) return;
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
         if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
@@ -1062,10 +1093,17 @@ class The_SEO_Playbook {
     public function indexnow_execute_ping( $url ) {
         $key = get_option( 'tsep_indexnow_key' );
         if ( empty( $key ) ) return;
+
+        // Only ever submit URLs that belong to this site's own host.
+        $site_host = wp_parse_url( home_url(), PHP_URL_HOST );
+        $url_host  = wp_parse_url( $url, PHP_URL_HOST );
+        if ( ! $url_host || strtolower( $url_host ) !== strtolower( (string) $site_host ) ) return;
+
         wp_remote_post( 'https://api.indexnow.org/indexnow', [
-            'timeout' => 10,
-            'headers' => [ 'Content-Type' => 'application/json' ],
-            'body'    => wp_json_encode( [ 'host' => parse_url( home_url(), PHP_URL_HOST ), 'key' => $key, 'urlList' => [ $url ] ] )
+            'timeout'   => 10,
+            'sslverify' => true,
+            'headers'   => [ 'Content-Type' => 'application/json' ],
+            'body'      => wp_json_encode( [ 'host' => $site_host, 'key' => $key, 'urlList' => [ esc_url_raw( $url ) ] ] ),
         ] );
     }
 
@@ -1287,16 +1325,39 @@ class The_SEO_Playbook {
         return 'https://raw.githubusercontent.com/whattheheehaw/wordpress-seo-plugin/main/update-info.json';
     }
 
+    /** True only for an HTTPS package hosted on GitHub's own domains. */
+    private function updater_is_trusted_package( $url ) {
+        $parts = wp_parse_url( $url );
+        if ( empty( $parts['scheme'] ) || empty( $parts['host'] ) ) return false;
+        if ( 'https' !== strtolower( $parts['scheme'] ) ) return false;
+
+        $host    = strtolower( $parts['host'] );
+        $allowed = [ 'github.com', 'codeload.github.com', 'objects.githubusercontent.com' ];
+        foreach ( $allowed as $domain ) {
+            if ( $host === $domain || str_ends_with( $host, '.' . $domain ) ) return true;
+        }
+        return false;
+    }
+
     private function updater_get_manifest() {
         $cached = get_transient( 'tsep_update_manifest' );
         if ( $cached ) return $cached;
 
-        $response = wp_remote_get( $this->updater_manifest_url(), [ 'timeout' => 10 ] );
+        $response = wp_remote_get( $this->updater_manifest_url(), [
+            'timeout'   => 10,
+            'sslverify' => true,
+        ] );
         if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
             return null;
         }
         $data = json_decode( wp_remote_retrieve_body( $response ) );
         if ( empty( $data->version ) ) return null;
+
+        // Only trust a package that lives on GitHub over HTTPS. A manifest whose download URL points
+        // anywhere else is ignored, so a tampered/MITM'd manifest cannot redirect the installer.
+        if ( empty( $data->download_url ) || ! $this->updater_is_trusted_package( $data->download_url ) ) {
+            return null;
+        }
 
         set_transient( 'tsep_update_manifest', $data, 12 * HOUR_IN_SECONDS );
         return $data;
