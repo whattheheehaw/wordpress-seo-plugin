@@ -3,7 +3,7 @@
  * Plugin Name:       The SEO Playbook
  * Plugin URI:        https://ameliahollis.net/the-seo-playbook
  * Description:       A powerful, modular SEO suite for WordPress. Includes Post SEO + Social Cards, a Person/Author entity with an auto-built profile page, FAQ schema, canonical URLs, a paginated XML sitemap index, and enhanced llms.txt for AI search visibility.
- * Version:           2.4.0
+ * Version:           2.4.1
  * Requires at least: 6.4
  * Requires PHP:      8.0
  * Author:            Amelia Hollis
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'TSEP_VERSION', '2.4.0' );
+define( 'TSEP_VERSION', '2.4.1' );
 
 class The_SEO_Playbook {
 
@@ -34,7 +34,7 @@ class The_SEO_Playbook {
 
     private function init_hooks() {
         add_action( 'plugins_loaded', [ $this, 'init' ] );
-        add_action( 'admin_init', [ $this, 'maybe_upgrade' ] );
+        add_action( 'init', [ $this, 'maybe_upgrade' ], 99 );
         add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), [ $this, 'add_settings_link' ] );
 
         register_activation_hook( __FILE__, [ $this, 'activate' ] );
@@ -44,7 +44,8 @@ class The_SEO_Playbook {
     /**
      * Runs once after the plugin version changes (e.g. via the GitHub auto-updater). Re-registers
      * rewrite rules and flushes them so new routes — such as the paginated sitemap sub-files — resolve
-     * without the user having to visit Settings → Permalinks manually.
+     * without the user having to visit Settings → Permalinks manually. Hooked on `init` (not just
+     * `admin_init`) so the flush also happens on the first front-end request after an update.
      */
     public function maybe_upgrade() {
         if ( get_option( 'tsep_version' ) === TSEP_VERSION ) return;
@@ -771,7 +772,7 @@ class The_SEO_Playbook {
     private function init_sitemaps() {
         add_action( 'init', [ $this, 'sitemap_add_rewrite_rule' ] );
         add_filter( 'query_vars', [ $this, 'sitemap_register_query_var' ] );
-        add_action( 'template_redirect', [ $this, 'sitemap_render' ] );
+        add_action( 'template_redirect', [ $this, 'sitemap_render' ], 0 );
         add_action( 'admin_init', [ $this, 'sitemap_register_settings' ] );
         add_action( 'tsep_render_tab_sitemaps', [ $this, 'sitemap_render_settings' ] );
     }
@@ -819,11 +820,28 @@ class The_SEO_Playbook {
         return array_values( array_intersect( $saved, $valid ) );
     }
 
+    /**
+     * Serve a virtual file (sitemap, etc.) as a clean HTTP 200 of the given type. Without this,
+     * WordPress can treat these rewrite endpoints as a 404 (sending a 404 status alongside the XML,
+     * which crawlers and browsers report as an error) or let redirect_canonical bounce them to
+     * another URL — which is also why the renderers run at template_redirect priority 0, ahead of
+     * redirect_canonical.
+     */
+    private function serve_virtual_file( $content_type ) {
+        global $wp_query;
+        if ( $wp_query instanceof WP_Query ) {
+            $wp_query->is_404 = false;
+        }
+        status_header( 200 );
+        nocache_headers();
+        header( 'Content-Type: ' . $content_type );
+    }
+
     public function sitemap_render() {
         $mode = get_query_var( 'tsep_sitemap' );
         if ( ! $mode ) return;
 
-        header( 'Content-Type: application/xml; charset=utf-8' );
+        $this->serve_virtual_file( 'application/xml; charset=utf-8' );
         header( 'X-Robots-Tag: noindex, follow', true );
 
         if ( 'sub' === $mode ) {
@@ -917,7 +935,7 @@ class The_SEO_Playbook {
     private function init_google_news_sitemap() {
         add_action( 'init', [ $this, 'news_sitemap_add_rewrite_rule' ] );
         add_filter( 'query_vars', [ $this, 'news_sitemap_register_query_var' ] );
-        add_action( 'template_redirect', [ $this, 'news_sitemap_render' ] );
+        add_action( 'template_redirect', [ $this, 'news_sitemap_render' ], 0 );
         add_action( 'admin_init', [ $this, 'news_sitemap_register_settings' ] );
         add_action( 'tsep_render_tab_sitemaps', [ $this, 'news_sitemap_render_settings' ] );
     }
@@ -938,7 +956,7 @@ class The_SEO_Playbook {
     }
     public function news_sitemap_render() {
         if ( ! get_query_var( 'tsep_news_sitemap' ) || ! get_option( 'tsep_news_sitemap_enabled', 1 ) ) return;
-        header( 'Content-Type: application/xml; charset=utf-8' );
+        $this->serve_virtual_file( 'application/xml; charset=utf-8' );
         echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">';
 
         // Ensure strictly only posts published in the last 48 hours are included
@@ -1113,7 +1131,7 @@ class The_SEO_Playbook {
     private function init_llms_txt() {
         add_action( 'init', [ $this, 'llms_add_rewrite_rule' ] );
         add_filter( 'query_vars', [ $this, 'llms_register_query_var' ] );
-        add_action( 'template_redirect', [ $this, 'llms_render' ] );
+        add_action( 'template_redirect', [ $this, 'llms_render' ], 0 );
         add_action( 'admin_init', [ $this, 'llms_register_settings' ] );
         add_action( 'tsep_render_tab_advanced', [ $this, 'llms_render_settings' ] );
     }
@@ -1154,12 +1172,12 @@ class The_SEO_Playbook {
     }
     public function llms_render() {
         if ( get_query_var( 'tsep_llms_txt' ) ) {
-            header( 'Content-Type: text/plain; charset=' . get_option( 'blog_charset' ) );
+            $this->serve_virtual_file( 'text/plain; charset=' . get_option( 'blog_charset' ) );
             echo $this->llms_build_content( false );
             exit;
         }
         if ( get_query_var( 'tsep_llms_full_txt' ) ) {
-            header( 'Content-Type: text/plain; charset=' . get_option( 'blog_charset' ) );
+            $this->serve_virtual_file( 'text/plain; charset=' . get_option( 'blog_charset' ) );
             echo $this->llms_build_content( true );
             exit;
         }
@@ -1255,7 +1273,7 @@ class The_SEO_Playbook {
     private function init_robots_txt() {
         add_action( 'init', [ $this, 'robots_add_rewrite_rule' ] );
         add_filter( 'query_vars', [ $this, 'robots_register_query_var' ] );
-        add_action( 'template_redirect', [ $this, 'robots_render' ] );
+        add_action( 'template_redirect', [ $this, 'robots_render' ], 0 );
         add_action( 'admin_init', [ $this, 'robots_register_settings' ] );
         add_action( 'tsep_render_tab_advanced', [ $this, 'robots_render_settings' ] );
         remove_action( 'do_robots', 'do_robots' );
@@ -1278,7 +1296,7 @@ class The_SEO_Playbook {
     }
     public function robots_render() {
         if ( get_query_var( 'tsep_robots_txt' ) ) {
-            header( 'Content-Type: text/plain; charset=' . get_option( 'blog_charset' ) );
+            $this->serve_virtual_file( 'text/plain; charset=' . get_option( 'blog_charset' ) );
             $custom = get_option( 'tsep_robots_content', '' );
             echo ! empty( trim( $custom ) ) ? wp_strip_all_tags( $custom ) : "User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php\n\nSitemap: " . home_url('/sitemap.xml');
             exit;

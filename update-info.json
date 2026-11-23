@@ -1,8 +1,8 @@
 {
-  "version": "2.4.0",
+  "version": "2.4.1",
   "download_url": "https://github.com/whattheheehaw/wordpress-seo-plugin/archive/refs/heads/main.zip",
   "requires": "6.4",
   "requires_php": "8.0",
-  "last_updated": "2026-11-18",
-  "changelog": "v2.4.0 - Security hardening: JSON-LD output now encodes <, >, &, ' and \" so stored values cannot break out of the script tag (inline-script XSS); nonces unslashed+sanitized before verification; settings tab whitelisted; OG/Twitter image meta stored with esc_url_raw; auto-updater enforces TLS and a GitHub-only package host allowlist; IndexNow only submits same-host URLs. v2.3.0 - Paginated XML sitemap index. v2.2.0 - Person entity, FAQ schema, canonical URLs, enhanced llms.txt, GitHub auto-updater."
+  "last_updated": "2026-11-23",
+  "changelog": "v2.4.1 - Fix: sitemap.xml (and news-sitemap.xml, llms.txt, robots.txt) are now served as a clean HTTP 200 instead of inheriting WordPress's 404 status, and run ahead of redirect_canonical so they are never bounced to another URL. The post-update rewrite-rule flush now also runs on the front end, so routes self-heal on the first visit after an update. v2.4.0 - Security hardening (JSON-LD escaping, nonce/url sanitization, updater host allowlist). v2.3.0 - Paginated XML sitemap index. v2.2.0 - Person entity, FAQ schema, canonical URLs, enhanced llms.txt, GitHub auto-updater."
 }
